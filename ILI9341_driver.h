@@ -4,31 +4,31 @@
 #ifndef __ILI9341_DRIVER_H__
 #define __ILI9341_DRIVER_H__
 
-
 #include <Arduino_GFX_Library.h>
 
-#define TFT_CS 9
-#define TFT_DC 8
+// Pin interface definitions
 #define TFT_RST A4
-#define GFX_BL 6
-
-uint8_t Orientation = 3;    //LANDSCAPE
 
 // 16-bit colour definitions
+// These use the define preprocessor directive due to limitations in the GFX library
 #define BLACK 0x0000
 
+// Orientation of the display
+uint8_t constexpr ORIENTATION = 3;
 
-// Global scope instances of the tft
+/// @brief Global scope instances of the tft data bus
 Arduino_DataBus *bus = new Arduino_UNOPAR8();
-Arduino_GFX *tft = new Arduino_ILI9341(bus, TFT_RST, Orientation, false /* ips */);
 
+/// @brief Global scope instances of the tft display
+Arduino_GFX *tft = new Arduino_ILI9341(bus, TFT_RST, ORIENTATION, false /* ips */);
 
+/// @brief Initialise the TFT display
 void initialise_tft()
 {
     tft->begin();
-    tft->setRotation(Orientation);
     tft->setCursor(0, 0);
     tft->fillScreen(BLACK);
+    tft->println("Hello World!");
 }
 
 #endif // __ILI9341_DRIVER_H__
