@@ -32,8 +32,8 @@
 // X_n and Y_n are maximum values from the touch screen
 
 // measured values for the screeen
-int constexpr X_o = 111, X_n = 923;
-int constexpr Y_o = 74, Y_n = 900;
+int constexpr X_o = 151, X_n = 891;
+int constexpr Y_o = 111, Y_n = 893;
 
 ///////////////////////////////////////
 
@@ -48,25 +48,71 @@ int constexpr Y_o = 74, Y_n = 900;
 ///////////////////////////////////////
 
 // LANDSCAPE CALIBRATION     320 x 240
-void map_point(TSPoint& p)
-{   
+
+#ifdef TOUCH_CALIBRATION_PROCESS
+/// @brief Calibration process for the touch screen
+/// @param p The touch screen point to calibrate
+void calibrateTouchscreen(TSPoint& p)
+{
     uint16_t const screen_width = tft->width();
     uint16_t const screen_height = tft->height();
 
-    int16_t tmp_x = p.x;
-#if defined(DEBUG_TOUCH) || defined(TOUCH_CALIBRATION_PROCESS)
-    Serial.print("raw- X: ");
+    uint16_t const text_y_offset = screen_height / 3;
+
+    tft->drawRect(0, 0, 2, 2, SNOW); // Draw a pixel at the top left corner of the screen
+    tft->drawRect(screen_width - 2, 0, 2, 2, SNOW); // Draw a pixel at the top right corner of the screen
+    tft->drawRect(0, screen_height - 2, 2, 2, SNOW); // Draw a pixel at the bottom left corner of the screen
+    tft->drawRect(screen_width - 2, screen_height - 2, 2, 2, SNOW); // Draw a pixel at the bottom right corner of the screen
+    tft->setTextColor(PLATINUM);
+    tft->setTextSize(3);
+    tft->setTextWrap(true);
+    tft->setCursor(0, text_y_offset); // Center the text vertically
+    tft->println("Calibration mode");
+    tft->println("Touch corners and read values from serial monitor");
+
+    // Print the raw values to the serial monitor for calibration
+    Serial.print("X: ");
     Serial.print(p.x);
     Serial.print(" Y: ");
     Serial.println(p.y);
+}
 #endif
+
+/// @brief Map the raw touch screen values to the screen coordinates
+/// @param p The touch screen point to map
+void mapPoint(TSPoint& p)
+{   
+#ifdef DEBUG_TOUCH
+    uint16_t raw_x = p.x;
+    uint16_t raw_y = p.y;
+#endif
+
+    uint16_t const screen_width = tft->width();
+    uint16_t const screen_height = tft->height();
+    int16_t tmp_x = p.x;
     p.x = constrain(map(p.y, Y_n, Y_o, 0, screen_width), 0, screen_width);
     p.y = constrain(map(tmp_x, X_n, X_o, 0, screen_height), 0, screen_height);
+
 #ifdef DEBUG_TOUCH
-    Serial.print("map- X: ");
-    Serial.print(p.x);
-    Serial.print(" Y: ");
-    Serial.println(p.y);
+    uint16_t const text_y_offset1 = (screen_height / 2) - (textPixelHeight(3) + 2);
+    uint16_t const text_y_offset2 = (screen_height / 2) + 2;
+
+    tft->fillScreen(EERIE_BLACK); // Clear the screen
+    tft->setTextColor(PLATINUM);
+    tft->setTextSize(3);
+    tft->setTextWrap(true);
+
+    tft->setCursor(10, text_y_offset1);
+    tft->print("X: ");
+    tft->print(raw_x);
+    tft->print(" -> ");
+    tft->print(p.x);
+    
+    tft->setCursor(10, text_y_offset2);
+    tft->print("Y: ");
+    tft->print(raw_y);
+    tft->print(" -> ");
+    tft->print(p.y);
 #endif
 }
 

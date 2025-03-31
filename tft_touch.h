@@ -35,8 +35,12 @@ bool touched(TSPoint& tp)
 
     if (tp.z > MINPRESSURE && tp.z < MAXPRESSURE)
     {
-      map_point(tp);
-      return true;
+#ifdef TOUCH_CALIBRATION_PROCESS
+        calibrateTouchscreen(tp);
+#else
+        mapPoint(tp);
+#endif
+        return true;
     }
 
     return false;
