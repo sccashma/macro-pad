@@ -28,8 +28,22 @@ typedef struct macro_t
     String name;                                ///< The name of the macro
     size_t const codes_size = KEY_CODES_MAX;    ///< The size of the key codes array
     uint8_t codes[KEY_CODES_MAX];               ///< The key codes for the macro
-} macro_t;
 
+    /// @brief operator overload for the assignment operator
+    /// @param other The macro to assign to this macro
+    /// @return macro_t&: A reference to this macro
+    macro_t& operator=(macro_t const &other)
+    {
+        this->id = other.id;
+        this->name = other.name;
+        for (size_t i = 0; i < this->codes_size; i++)
+        {
+            this->codes[i] = other.codes[i];
+        }
+        return *this;
+    }
+
+} macro_t;
 
 /// @brief initialise the keyboard
 void initialiseKeyboard()
