@@ -15,16 +15,16 @@ Hashtable<String, uint8_t> key_table;
 ///          The key codes are defined in the Keyboard library: https://docs.arduino.cc/language-reference/en/functions/usb/Keyboard/keyboardModifiers/
 void initTable()
 {
-    constexpr uint8_t NUM0 = 0X30;
-    constexpr uint8_t NUM1 = 0X31;
-    constexpr uint8_t NUM2 = 0X32;
-    constexpr uint8_t NUM3 = 0X33;
-    constexpr uint8_t NUM4 = 0X34;
-    constexpr uint8_t NUM5 = 0X35;
-    constexpr uint8_t NUM6 = 0X36;
-    constexpr uint8_t NUM7 = 0X37;
-    constexpr uint8_t NUM8 = 0X38;
-    constexpr uint8_t NUM9 = 0X39;
+    uint8_t constexpr NUM0 = 0X30;
+    uint8_t constexpr NUM1 = 0X31;
+    uint8_t constexpr NUM2 = 0X32;
+    uint8_t constexpr NUM3 = 0X33;
+    uint8_t constexpr NUM4 = 0X34;
+    uint8_t constexpr NUM5 = 0X35;
+    uint8_t constexpr NUM6 = 0X36;
+    uint8_t constexpr NUM7 = 0X37;
+    uint8_t constexpr NUM8 = 0X38;
+    uint8_t constexpr NUM9 = 0X39;
 
     if (!key_table.isEmpty())
     {
