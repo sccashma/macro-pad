@@ -5,6 +5,9 @@
 #include "ILI9341_driver.h"
 #include <SD.h>
 
+namespace sd
+{
+    
 /// @brief Attempt to initialise the sd card
 /// \return bool: Did the SD card initialise correctly
 bool initialiseSD()
@@ -49,4 +52,5 @@ String readLine(File *file)
     return readLineUntil(file, '\n');
 }
 
+} // namespace sd
 #endif // __SD_UTILS_H__
