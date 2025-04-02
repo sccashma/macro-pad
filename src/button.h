@@ -1,7 +1,7 @@
 #ifndef __BUTTON_H__
 #define __BUTTON_H__
 
-#include <Arduino.h>
+#include "constants.h"
 
 namespace gui
 {
@@ -15,24 +15,58 @@ protected:
     /// @note This is used to define the function pointer type for the action function
     using buttonCallback = void (*)(void*);
     buttonCallback m_callback_function;
-
+    
     /// @brief context in which to invoke the action function
     void* m_context;
+
+    /// @brief type alias for the function to draw the button
+    /// @note This is used to define the function pointer type for the draw function
+    using drawButtonCallback = void (*)();
+    drawButtonCallback m_draw_function;
 
 public:
     /// @brief constructor for the button_base_c class
     button_base_c()
-    : m_xmin(0)
+    : m_active(true)
+    , m_xmin(0)
     , m_ymin(0)
     , m_size_x(0)
     , m_size_y(0)
     , m_image_file("")
     , m_name("")
     , m_callback_function(nullptr)
+    , m_draw_function(nullptr)
     , m_context(nullptr)
-    , m_colour(EERIE_BLACK)
+    , m_fill_colour(DEFAULT_FILL_COLOUR)
+    , m_txt_colour(DEFAULT_TEXT_COLOUR)
+    , m_border_colour(DEFAULT_BORDER_COLOUR)
     {
     }
+
+    /// @brief constructor for the button_base_c class with parameters
+    /// @param x The x coordinate of the button in pixels
+    /// @param y The y coordinate of the button in pixels
+    /// @param width The width of the button in pixels
+    /// @param height The height of the button in pixels
+    button_base_c(int16_t x = 0, int16_t y = 0, int16_t width = 0, int16_t height = 0, const char* name = "")
+        : m_active(true)
+        , m_xmin(x)
+        , m_ymin(y)
+        , m_size_x(width)
+        , m_size_y(height)
+        , m_name(name)
+        , m_callback_function(nullptr)
+        , m_draw_function(nullptr)
+        , m_context(nullptr)
+        , m_fill_colour(DEFAULT_FILL_COLOUR)
+        , m_txt_colour(DEFAULT_TEXT_COLOUR)
+        , m_border_colour(DEFAULT_BORDER_COLOUR)
+    {
+    }
+
+    /// @brief destructor for the button_base_c class
+    /// @note This is a virtual destructor to allow for proper cleanup of derived classes
+    virtual ~button_base_c() = default;
     
     /// @brief Set the origin of the button in pixels
     /// @param x The x coordinate of the button in pixels
@@ -52,13 +86,34 @@ public:
         this->m_context = ctx;
     }
 
+    /// @brief Set the function to draw the button
+    /// @param draw_function The function to draw the button
+    void draw(drawButtonCallback draw_function)
+    {
+        this->m_draw_function = draw_function;
+    }
+
     /// @brief Invoke the callback function with the context
     void press()
     {
-        if(m_callback_function)
+        if(m_callback_function && m_active)
         {
             m_callback_function(m_context);
         }
+    }
+
+    /// @brief Set the active state of the button
+    /// @param active The active state of the button
+    void active(bool active)
+    {
+        this->m_active = active;
+    }
+
+    /// @brief Get the active state of the button
+    /// @return bool: The active state of the button
+    bool active() const
+    {
+        return this->m_active;
     }
 
     /// @brief Set the file path name for the image to be displayed on the button
@@ -87,20 +142,6 @@ public:
     String name() const
     {
       return this->m_name;
-    }
-
-    /// @brief Get the macro associated with the button
-    /// @return macro_t: The macro associated with the button
-    macro::macro_t macro()
-    {
-        return this->m_macro;
-    }
-
-    /// @brief Set the macro associated with the button
-    /// @param set The macro to be associated with the button
-    void macro(macro::macro_t& set)
-    {
-        this->m_macro = set;
     }
 
     /// @brief Get the x coordinate of the button
@@ -167,31 +208,69 @@ public:
         this->m_size_y = y;
     }
 
-    /// @brief Set the colour of the button
-    /// @param colour The colour of the button
-    /// @note This is the colour of the button in RGB565 format
-    void setColour(int colour)
+    /// @brief Set the fill colour of the button
+    /// @param colour The fill colour of the button in RGB565 format
+    /// @note This determines the background colour of the button
+    void fillColour(int colour)
     {
-        this->m_colour = colour;
+        this->m_fill_colour = colour;
     }
 
-    /// @brief Get the colour of the button
-    /// @return int: The colour of the button
-    /// @note This is the colour of the button in RGB565 format
-    int colour() const
+    /// @brief Get the fill colour of the button
+    /// @return int: The fill colour of the button in RGB565 format
+    /// @note This is the background colour of the button
+    int fillColour() const
     {
-        return this->m_colour;
+        return this->m_fill_colour;
     }
 
-protected:
-    int m_colour;
+    /// @brief Set the text colour of the button
+    /// @param colour The text colour of the button in RGB565 format
+    /// @note This determines the colour of the text displayed on the button
+    void txtColour(int colour)
+    {
+        this->m_txt_colour = colour;
+    }
+
+    /// @brief Get the text colour of the button
+    /// @return int: The text colour of the button in RGB565 format
+    /// @note This is the colour of the text displayed on the button
+    int txtColour() const
+    {
+        return this->m_txt_colour;
+    }
+
+    /// @brief Set the border colour of the button
+    /// @param colour The border colour of the button in RGB565 format
+    /// @note This determines the colour of the button's border
+    void borderColour(int colour)
+    {
+        this->m_border_colour = colour;
+    }
+
+    /// @brief Get the border colour of the button
+    /// @return int: The border colour of the button in RGB565 format
+    /// @note This is the colour of the button's border
+    int borderColour() const
+    {
+        return this->m_border_colour;
+    }
+
+private:
+    static constexpr int DEFAULT_FILL_COLOUR = ARYLIDE_YELLOW;
+    static constexpr int DEFAULT_TEXT_COLOUR = RICH_BLACK;
+    static constexpr int DEFAULT_BORDER_COLOUR = RICH_BLACK;
+
+    bool m_active;
+    int m_fill_colour;
+    int m_txt_colour;
+    int m_border_colour;
     int16_t m_xmin;
     int16_t m_ymin;
     int16_t m_size_x;
     int16_t m_size_y;
     String m_image_file;
     String m_name;
-    macro::macro_t m_macro;
 };
 
 } // namespace gui

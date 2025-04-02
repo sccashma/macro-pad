@@ -5,17 +5,10 @@
 #define __ILI9341_DRIVER_H__
 
 #include <Arduino_GFX_Library.h>
+#include "constants.h"
 
 // Pin interface definitions
 #define TFT_RST A4
-
-// 16-bit colour definitions
-#define BLACK 0x0000
-#define FIRE_BRICK 0xb844
-#define PLATINUM 0xd69a
-#define AIR_FORCE_BLUE 0x4c54
-#define EERIE_BLACK 0x2125
-#define SNOW 0xffdf
 
 // Orientation of the display
 uint8_t constexpr ORIENTATION = 3;
@@ -31,15 +24,15 @@ void initialiseTFT()
 {
     tft->begin();
     tft->setCursor(0, 0);
-    tft->fillScreen(BLACK);
+    tft->fillScreen(RICH_BLACK);
 }
 
 /// @brief Display an error message on the screen
 /// @param msg The message to display
 void displayError(const char *msg)
 {
-    tft->fillScreen(EERIE_BLACK);
-    tft->setTextColor(FIRE_BRICK);
+    tft->fillScreen(RICH_BLACK);
+    tft->setTextColor(ANTI_FLASH_WHITE);
     tft->setCursor(0, 0);
     tft->setTextSize(3);
     tft->println(msg);
@@ -84,7 +77,7 @@ uint8_t textPixelHeight(uint8_t const text_size)
 void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16_t colour, String text = "", uint8_t text_size = 0)
 {
     tft->fillRect(x, y, x_, y_, colour);
-    tft->drawRect(x, y, x_, y_, WHITE);
+    tft->drawRect(x, y, x_, y_, ANTI_FLASH_WHITE);
 
     if (text != "")
     {   
@@ -96,8 +89,8 @@ void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16
 
         tft->setCursor(x + 10, y + y_offset);
 
-        if (colour == SNOW || colour == WHITE) tft->setTextColor(EERIE_BLACK);
-        else tft->setTextColor(SNOW);
+        if (colour == ANTI_FLASH_WHITE || colour == WHITE) tft->setTextColor(RICH_BLACK);
+        else tft->setTextColor(ANTI_FLASH_WHITE);
         
         tft->println(text);
     }
@@ -116,7 +109,7 @@ static void bmpDrawCallback(int16_t x, int16_t y, uint16_t *bitmap, int16_t w, i
 
     if (border)
     {
-        tft->drawRect(x, y, w, h, SNOW);
+        tft->drawRect(x, y, w, h, ANTI_FLASH_WHITE);
     }
 }
 
