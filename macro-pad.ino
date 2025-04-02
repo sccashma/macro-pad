@@ -1,8 +1,8 @@
 
-#include "ILI9341_driver.h"
-#include "tft_touch.h"
-#include "sd_utils.h"
-#include "macro.h"
+#include "src/ILI9341_driver.h"
+#include "src/tft_touch.h"
+#include "src/sd_utils.h"
+#include "src/macro.h"
 
 // #define DEBUG
 void setup()
@@ -23,7 +23,7 @@ void setup()
     }
 
 #ifdef TOUCH_CALIBRATION_PROCESS
-    tft->setTextColor(SNOW);
+    tft->setTextColor(ANTI_FLASH_WHITE);
     tft->setTextSize(3);
     tft->setTextWrap(true);
     tft->println("Touch screen to begin calibration process.");
@@ -47,8 +47,8 @@ void setup()
 
     // If the pragram reaches this point, then somehting went wrong and we should disconnect
     macro::closeKeyboard();
-    tft->setTextColor(FIRE_BRICK);
-    tft->fillScreen(EERIE_BLACK);
+    tft->setTextColor(ANTI_FLASH_WHITE);
+    tft->fillScreen(RICH_BLACK);
     tft->setCursor(0, 0);
     tft->setTextSize(1);
     tft->setTextWrap(true);
