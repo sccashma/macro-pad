@@ -2,7 +2,6 @@
 #include "src/ILI9341_driver.h"
 #include "src/tft_touch.h"
 #include "src/sd_utils.h"
-#include "src/macro.h"
 
 // #define DEBUG
 void setup()

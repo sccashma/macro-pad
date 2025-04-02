@@ -1,6 +1,7 @@
 #ifndef __BUTTON_H__
 #define __BUTTON_H__
 
+#include <Arduino.h>
 #include "constants.h"
 
 namespace gui
@@ -19,23 +20,21 @@ protected:
     /// @brief context in which to invoke the action function
     void* m_context;
 
-    /// @brief type alias for the function to draw the button
-    /// @note This is used to define the function pointer type for the draw function
-    using drawButtonCallback = void (*)();
-    drawButtonCallback m_draw_function;
-
 public:
-    /// @brief constructor for the button_base_c class
-    button_base_c()
+    /// @brief constructor for the button_base_c class with parameters
+    /// @param x The x coordinate of the button in pixels
+    /// @param y The y coordinate of the button in pixels
+    /// @param width The width of the button in pixels
+    /// @param height The height of the button in pixels
+    button_base_c(int16_t x = 0, int16_t y = 0, int16_t width = 0, int16_t height = 0, const char* name = "")
     : m_active(true)
-    , m_xmin(0)
-    , m_ymin(0)
-    , m_size_x(0)
-    , m_size_y(0)
+    , m_xmin(x)
+    , m_ymin(y)
+    , m_size_x(width)
+    , m_size_y(height)
     , m_image_file("")
-    , m_name("")
+    , m_name(name)
     , m_callback_function(nullptr)
-    , m_draw_function(nullptr)
     , m_context(nullptr)
     , m_fill_colour(DEFAULT_FILL_COLOUR)
     , m_txt_colour(DEFAULT_TEXT_COLOUR)
@@ -43,38 +42,54 @@ public:
     {
     }
 
-    /// @brief constructor for the button_base_c class with parameters
-    /// @param x The x coordinate of the button in pixels
-    /// @param y The y coordinate of the button in pixels
-    /// @param width The width of the button in pixels
-    /// @param height The height of the button in pixels
-    button_base_c(int16_t x = 0, int16_t y = 0, int16_t width = 0, int16_t height = 0, const char* name = "")
-        : m_active(true)
-        , m_xmin(x)
-        , m_ymin(y)
-        , m_size_x(width)
-        , m_size_y(height)
-        , m_name(name)
-        , m_callback_function(nullptr)
-        , m_draw_function(nullptr)
-        , m_context(nullptr)
-        , m_fill_colour(DEFAULT_FILL_COLOUR)
-        , m_txt_colour(DEFAULT_TEXT_COLOUR)
-        , m_border_colour(DEFAULT_BORDER_COLOUR)
+    /// @brief copy constructor for the button_base_c class
+    /// @param rhs The button to copy
+    button_base_c(button_base_c const& rhs)
+    : m_active(rhs.m_active)
+    , m_xmin(rhs.m_xmin)
+    , m_ymin(rhs.m_ymin)
+    , m_size_x(rhs.m_size_x)
+    , m_size_y(rhs.m_size_y)
+    , m_image_file(rhs.m_image_file)
+    , m_name(rhs.m_name)
+    , m_callback_function(rhs.m_callback_function)
+    , m_context(rhs.m_context)
+    , m_fill_colour(rhs.m_fill_colour)
+    , m_txt_colour(rhs.m_txt_colour)
+    , m_border_colour(rhs.m_border_colour)
     {
     }
 
-    /// @brief destructor for the button_base_c class
-    /// @note This is a virtual destructor to allow for proper cleanup of derived classes
-    virtual ~button_base_c() = default;
-    
+    /// @brief assignment operator for the button_base_c class
+    /// @param rhs The button to assign
+    /// @return button_base_c&: A reference to this button
+    button_base_c& operator=(button_base_c const& rhs)
+    {
+        if (this != &rhs)
+        {
+            this->m_active = rhs.m_active;
+            this->m_xmin = rhs.m_xmin;
+            this->m_ymin = rhs.m_ymin;
+            this->m_size_x = rhs.m_size_x;
+            this->m_size_y = rhs.m_size_y;
+            this->m_image_file = rhs.m_image_file;
+            this->m_name = rhs.m_name;
+            this->m_callback_function = rhs.m_callback_function;
+            this->m_context = rhs.m_context;
+            this->m_fill_colour = rhs.m_fill_colour;
+            this->m_txt_colour = rhs.m_txt_colour;
+            this->m_border_colour = rhs.m_border_colour;
+        }
+        return *this;
+    }
+
     /// @brief Set the origin of the button in pixels
     /// @param x The x coordinate of the button in pixels
     /// @param y The y coordinate of the button in pixels
     void setPos(int16_t x, int16_t y)
     {
-        m_xmin = x;
-        m_ymin = y;
+        this->m_xmin = x;
+        this->m_ymin = y;
     }
     
     /// @brief Set the callback function to be called when the button is pressed
@@ -84,13 +99,6 @@ public:
     {
         this->m_callback_function = callback_function;
         this->m_context = ctx;
-    }
-
-    /// @brief Set the function to draw the button
-    /// @param draw_function The function to draw the button
-    void draw(drawButtonCallback draw_function)
-    {
-        this->m_draw_function = draw_function;
     }
 
     /// @brief Invoke the callback function with the context
