@@ -27,6 +27,8 @@ void setup()
         while(true) {}
     }
 
+    macro::initialiseKeyboard();
+
 #ifdef TOUCH_CALIBRATION_PROCESS
     display::tft->setTextColor(ANTI_FLASH_WHITE);
     display::tft->setTextSize(3);
@@ -34,8 +36,6 @@ void setup()
     display::tft->println("Touch screen to begin calibration process.");
     delay(2000);
 #endif
-
-macro::initialiseKeyboard();
 
     model::model_c *model = new model::model_c();
     view::view_c *view = new view::view_c();
