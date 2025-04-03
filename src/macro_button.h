@@ -21,19 +21,31 @@ class macro_button_c : public button_base_c
 public:
     macro_button_c() = delete; // We don't want a default constructor
 
-    macro_button_c(macro::macro_t macro, String const name, String const file_name)
+    /// @brief Constructor
+    /// @param macro The macro to send on button press
+    /// @param name The name of the macro
+    /// @param file_path The file path of the macro's bmp
+    macro_button_c(macro::macro_c macro, String const name, String const file_path)
     : button_base_c(0, 0, DEFAULT_MACRO_BUTTON_WIDTH, DEFAULT_MACRO_BUTTON_HEIGHT, name.c_str())
+    , m_macro(macro)
+    , m_file_path(file_path)
     {
-        this->m_macro = macro;
-        this->callback(macro_button_c::m_call_send_macro, this);
+        this->callback(macro_button_c::handleSendMacro, this);
     }
 
+    /// @brief Copy constructor
+    /// @param rhs The macro button to copy
     macro_button_c(macro_button_c const& rhs)
     : button_base_c(rhs)
+    , m_macro(rhs.m_macro)
+    , m_file_path(rhs.m_file_path)
     {
-        this->callback(macro_button_c::m_call_send_macro, this);
+        this->callback(macro_button_c::handleSendMacro, this);
     }
 
+    /// @brief Assignment operator
+    /// @param rhs The macro button to assign 
+    /// @return macro_button_c& Reference to this
     macro_button_c& operator=(macro_button_c& rhs)
     {
         if (this != &rhs)
@@ -43,19 +55,21 @@ public:
         return *this;
     }
 
-    void m_send_macro()
+private:
+    macro::macro_c m_macro; ///< The macro associated with the button
+    String m_file_path;     ///< The file path of the macro's bmp
+
+    /// @brief Play the macro
+    void _sendMacro()
     {
         this->m_macro.play();
     }
 
-    static void m_call_send_macro(void* obj)
+    /// @brief Handler to send the macro
+    static void handleSendMacro(void* obj)
     {
-        Serial.println("macro_button_c::m_call_send_macro");
-        if (obj) static_cast<macro_button_c*>(obj)->m_send_macro();
+        if (obj) static_cast<macro_button_c*>(obj)->_sendMacro();
     }
-
-private:
-    macro::macro_t m_macro; ///< The macro associated with the button
 };
 
 } // namespace gui

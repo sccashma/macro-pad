@@ -45,17 +45,17 @@ bool debounce()
 /// @brief Checks if the screen was touched and updates the TouchPoint
 /// @param tp If the screen was pressed, the x and y coordinates are updated to closely match the pixels
 /// @return True if the screen was pressed, false otherwise
-bool touched(TSPoint& tp)
+bool touched(TSPoint *tp)
 {
-    tp = ts.getPoint();  //tp.x, tp.y are raw ADC values
+    *tp = ts.getPoint();  //tp.x, tp.y are raw ADC values
 
     pinMode(XM, OUTPUT);
     pinMode(YP, OUTPUT);
 
-    if (tp.z > MINPRESSURE && tp.z < MAXPRESSURE && debounce())
+    if (tp->z > MINPRESSURE && tp->z < MAXPRESSURE && debounce())
     {
 #ifdef TOUCH_CALIBRATION_PROCESS
-        calibrateTouchscreen(tp);
+        calibrateTouchscreen(*tp);
 #else
         mapPoint(tp);
 #endif

@@ -889,17 +889,11 @@ public:
      * like trying to set it up yourself. :)
      */
     void debugIterator() {
-        Serial.println("[HASHTABLE]: Debugging Iterator:");
         auto it = begin();
         while (it != end()) {
             auto kv = *it;
-            Serial.print("[HASHTABLE ITERATOR]: Key: ");
-            Serial.print(kv.key);
-            Serial.print(", Value: ");
-            Serial.println(kv.value);
             ++it;
         }
-        Serial.println("[HASHTABLE]: Iterator completed successfully.");
     }
 };
 

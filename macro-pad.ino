@@ -2,8 +2,14 @@
 #include "src/ILI9341_driver.h"
 #include "src/tft_touch.h"
 #include "src/sd_utils.h"
+#include "src/macro.h"
+
+#include "src/model.h"
+#include "src/view.h"
+#include "src/presenter.h"
 
 // #define DEBUG
+
 void setup()
 {
 #if defined(DEBUG) || defined(DEBUG_TOUCH) || defined(TOUCH_CALIBRATION_PROCESS)
@@ -13,23 +19,27 @@ void setup()
     }
 #endif
 
-    initialiseTFT();
+    display::initialiseTFT();
 
     if (!sd::initialiseSD())
     {
-        displayError("SD card error!");
+        display::displayError("SD card error!");
         while(true) {}
     }
 
 #ifdef TOUCH_CALIBRATION_PROCESS
-    tft->setTextColor(ANTI_FLASH_WHITE);
-    tft->setTextSize(3);
-    tft->setTextWrap(true);
-    tft->println("Touch screen to begin calibration process.");
+    display::tft->setTextColor(ANTI_FLASH_WHITE);
+    display::tft->setTextSize(3);
+    display::tft->setTextWrap(true);
+    display::tft->println("Touch screen to begin calibration process.");
     delay(2000);
 #endif
 
-    macro::initialiseKeyboard();
+macro::initialiseKeyboard();
+
+    model::model_c *model = new model::model_c();
+    view::view_c *view = new view::view_c();
+    presenter::presenter_c *presenter = new presenter::presenter_c(model, view);
 
 #if defined(TOUCH_CALIBRATION_PROCESS) || defined(DEBUG_TOUCH)
     for (;;)
@@ -38,20 +48,21 @@ void setup()
         (void) touched(tp);
     }
 #else
-    for (;;)
-    {
-
-    }
+    presenter->run();
 #endif
+
+    delete presenter;
+    delete view;
+    delete model;
 
     // If the pragram reaches this point, then somehting went wrong and we should disconnect
     macro::closeKeyboard();
-    tft->setTextColor(ANTI_FLASH_WHITE);
-    tft->fillScreen(RICH_BLACK);
-    tft->setCursor(0, 0);
-    tft->setTextSize(1);
-    tft->setTextWrap(true);
-    tft->println("UNKNOWN ERROR");
+    display::tft->setTextColor(ANTI_FLASH_WHITE);
+    display::tft->fillScreen(RICH_BLACK);
+    display::tft->setCursor(0, 0);
+    display::tft->setTextSize(1);
+    display::tft->setTextWrap(true);
+    display::tft->println("UNKNOWN ERROR");
 }
 
 

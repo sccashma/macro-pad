@@ -36,17 +36,17 @@ public:
             xend = x + width;
 
             bmpRow = (uint16_t *)malloc(xend * 2);
-            if (!bmpRow)
-            {
-                Serial.println(F("bmpRow malloc failed."));
-            }
+            // if (!bmpRow)
+            // {
+            //     Serial.println(F("bmpRow malloc failed."));
+            // }
             if (bmbpp < 9)
             {
                 bmplt = (uint16_t *)malloc(bmpltsize * 2);
-                if (!bmplt)
-                {
-                    Serial.println(F("bmplt malloc failed."));
-                }
+                // if (!bmplt)
+                // {
+                //     Serial.println(F("bmplt malloc failed."));
+                // }
                 bmloadplt(f); //load palette if palettized
                 drawbmpal(f, u, v, xend);
                 free(bmplt);
@@ -132,7 +132,6 @@ private:
         {
             ystart = bmheight - _heightLimit; //don't draw if it's outside screen
         }
-        Serial.println(xend);
         for (y = ystart; y < bmheight; y++)
         {                                   //invert in calculation (y=0 is bottom)
             f->seek(bmdataptr + (y * bmbpl)); //seek at start of line

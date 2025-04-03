@@ -7,6 +7,9 @@
 #include <Arduino_GFX_Library.h>
 #include "constants.h"
 
+namespace display
+{
+
 // Pin interface definitions
 #define TFT_RST A4
 
@@ -22,20 +25,31 @@ Arduino_ILI9341 *tft = new Arduino_ILI9341(bus, TFT_RST, ORIENTATION, false /* i
 /// @brief Initialise the TFT display
 void initialiseTFT()
 {
-    tft->begin();
-    tft->setCursor(0, 0);
-    tft->fillScreen(RICH_BLACK);
+   tft->begin();
+   tft->setCursor(0, 0);
+   tft->fillScreen(RICH_BLACK);
 }
 
 /// @brief Display an error message on the screen
 /// @param msg The message to display
-void displayError(const char *msg)
+void displayError(char const *msg)
 {
-    tft->fillScreen(RICH_BLACK);
-    tft->setTextColor(ANTI_FLASH_WHITE);
-    tft->setCursor(0, 0);
-    tft->setTextSize(3);
-    tft->println(msg);
+   tft->fillScreen(RICH_BLACK);
+   tft->setTextColor(ANTI_FLASH_WHITE);
+   tft->setCursor(0, 0);
+   tft->setTextSize(3);
+   tft->println(msg);
+}
+
+/// @brief Display message on the screen
+/// @param msg The message to display
+void displayMessage(char const *msg)
+{
+   tft->fillScreen(RICH_BLACK);
+   tft->setTextColor(ANTI_FLASH_WHITE);
+   tft->setCursor(0, 0);
+   tft->setTextSize(3);
+   tft->println(msg);
 }
 
 /// @brief Calculates the "text size" for use in the GFX library.
@@ -74,10 +88,10 @@ uint8_t textPixelHeight(uint8_t const text_size)
 /// @param colour The colour of the button
 /// @param text The text to display on the button, if 0, or not specified, the text will be half the button height
 /// @param text_size The size of the text to display on the button
-void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16_t colour, String text = "", uint8_t text_size = 0)
+void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16_t fill_colour, uint16_t text_colour, uint16_t border_colour, String text = "", uint8_t text_size = 0)
 {
-    tft->fillRect(x, y, x_, y_, colour);
-    tft->drawRect(x, y, x_, y_, ANTI_FLASH_WHITE);
+   tft->fillRect(x, y, x_, y_, fill_colour);
+    tft->drawRect(x, y, x_, y_, border_colour);
 
     if (text != "")
     {   
@@ -88,11 +102,8 @@ void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16
         uint8_t y_offset = (y_ - textPixelHeight(scaled_font_size)) / 2; // center the text as best we can
 
         tft->setCursor(x + 10, y + y_offset);
-
-        if (colour == ANTI_FLASH_WHITE || colour == WHITE) tft->setTextColor(RICH_BLACK);
-        else tft->setTextColor(ANTI_FLASH_WHITE);
-        
-        tft->println(text);
+        tft->setTextColor(text_colour);
+        tft->print(text);
     }
 }
 
@@ -113,4 +124,5 @@ static void bmpDrawCallback(int16_t x, int16_t y, uint16_t *bitmap, int16_t w, i
     }
 }
 
+} // namespace display
 #endif // __ILI9341_DRIVER_H__
