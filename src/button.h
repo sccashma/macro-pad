@@ -110,12 +110,16 @@ public:
     }
 
     /// @brief Invoke the callback function with the context
-    void press()
+    /// @return bool: True if the callback function was invoked, false otherwise
+    bool press()
     {
-        if(m_callback_function && m_active)
+        bool ret = false;
+        if (m_callback_function && m_active)
         {
+            ret = true;
             m_callback_function(m_callback_context);
         }
+        return ret;
     }
 
     /// @brief Set the draw function to be called that draws the button

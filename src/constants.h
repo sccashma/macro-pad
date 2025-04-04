@@ -44,7 +44,7 @@ enum class menu_state_t
 // Numbers of buttons
 uint16_t constexpr HOME_SCREEN_BUTTONS = 8; // Number of macros on the home screen (SETTINGS BUTTON IS LAST BUTTON)
 uint16_t constexpr MAIN_MENU_BUTTONS = 2; // Number of buttons in the main menu
-uint16_t constexpr MACRO_SELECT_BUTTONS = 9; // Number of buttons in the macro select menu
+uint16_t constexpr MACRO_SELECT_BUTTONS = 3; // Number of buttons in the macro select menu
 uint16_t constexpr MACRO_SELECT_OPTIONS = 6; // Number of options in the macro select menu
 uint16_t constexpr MACRO_PLACE_OPTIONS = 7; // Number of placement options in the macro place menu
 uint16_t constexpr MACRO_PLACE_BUTTONS = HOME_SCREEN_BUTTONS; // Number of buttons in the macro place menu (last button is save/return)

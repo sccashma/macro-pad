@@ -34,6 +34,11 @@ namespace view
 /// @return The number of macro buttons in the array
 #define MACRO_BTN_COUNT(x) sizeof(m_active_macros) / sizeof(gui::macro_button_c*)
 
+/// @brief Helper macro to get the number of menu button pointers in an array
+/// @param x gui::button_base_c*: The array
+/// @return The number of menu buttons in the array
+#define MENU_BTN_COUNT(x) sizeof(m_menu_buttons) / sizeof(gui::button_base_c*)
+
 typedef enum view_state_t
 {
     NONE = 0,
@@ -51,31 +56,37 @@ class view_c
 {
 private:
     view_state_t m_state;
-    gui::button_base_c m_settings_menu_button;
+    view_state_t m_prev_state;
     gui::button_base_c m_test_button; //< test button (for testing only)
-    gui::macro_button_c* m_active_macros[MACRO_PLACE_OPTIONS];
+    gui::macro_button_c *m_active_macros[MACRO_PLACE_OPTIONS];
+    
+    /// @brief Menu buttons and their indexes
+    static size_t constexpr home_settings = 0;
+    static size_t constexpr main_menu_load = 1;
+    static size_t constexpr main_menu_back = 2;
+    static size_t constexpr macro_select_left = 3;
+    static size_t constexpr macro_select_right = 4;
+    static size_t constexpr macro_select_done_place = 5;
+    gui::button_base_c *m_menu_buttons[6];
 
 public:
     /// @brief Constructor
     view_c()
     : m_state(view_state_t::NONE)
+    , m_prev_state(view_state_t::NONE)
     {
-        this->m_test_button = gui::button_base_c(0, 0, DEFAULT_MENU_BUTTON_WIDTH, DEFAULT_MENU_BUTTON_HEIGHT, "# Macros");
+        this->m_test_button = gui::button_base_c(
+            0, 0, DEFAULT_MENU_BUTTON_WIDTH, DEFAULT_MENU_BUTTON_HEIGHT, "# Macros");
         this->m_test_button.drawCallback(handleDrawButton, this);
 
-        gui::wf_home_screen_t wf;
-
-        this->m_settings_menu_button = gui::button_base_c(wf.menu_button.x
-            , wf.menu_button.y
-            , DEFAULT_MACRO_BUTTON_WIDTH
-            , DEFAULT_MACRO_BUTTON_HEIGHT
-            , "Settings");
-        this->m_settings_menu_button.imageFilePath("menu.bmp");
-        this->m_settings_menu_button.drawCallback(handleDrawBmpButton, this);
-
-        for (size_t i = 0; i < MACRO_PLACE_OPTIONS; i++)
+        for (size_t i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
         {
             m_active_macros[i] = nullptr;
+        }
+        
+        for (size_t i = 0; i < MENU_BTN_COUNT(m_menu_buttons); i++)
+        {
+            m_menu_buttons[i] = nullptr;
         }
     }
 
@@ -83,6 +94,7 @@ public:
     ~view_c()
     {
         _deleteActiveMacros();
+        _deleteMenuButtons();
     }
 
     /// @brief Clear the screen
@@ -130,37 +142,88 @@ public:
             , display::tft->height() / 2
             , "Please wait Democratically"
             , ARYLIDE_YELLOW
-            , RICH_BLACK
             , 3);
+        m_prev_state = m_state;
     }
 
     /// @brief Display the home screen
     void homeScreen()
     {
         m_state = view_state_t::HOME;
-        display::drawBmp("/bckgrnd.bmp"
-            , 0
-            , 0
-            , display::tft->width()
-            , display::tft->height()
-            , false
-            , display::tft->height() / 2);
+        if (m_prev_state == view_state_t::LOADING)
+        {
+            // Clear only the text section
+            display::drawBmp("/bckgrnd.bmp"
+                , 0
+                , 0
+                , display::tft->width()
+                , display::tft->height()
+                , false
+                , display::tft->height() / 2);
+        }
+        else if (m_prev_state == view_state_t::MAIN_MENU)
+        {
+            // Clear only up to the top of the menu buttons
+            display::drawBmp("/bckgrnd.bmp"
+                , 0
+                , 0
+                , display::tft->width()
+                , display::tft->height()
+                , false
+                , display::tft->height() - DEFAULT_MENU_BUTTON_HEIGHT);
+        }
+        else
+        {
+            display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
+        }
+        
+        _deleteMenuButtons();
 
         for (int i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
         {
             if (m_active_macros[i] == nullptr) continue;
             m_active_macros[i]->draw();
         }
-        m_settings_menu_button.draw();
+        gui::wf_home_screen_t wf;
+
+        m_menu_buttons[home_settings] = new gui::button_base_c(wf.menu_button.x
+            , wf.menu_button.y
+            , DEFAULT_MACRO_BUTTON_WIDTH
+            , DEFAULT_MACRO_BUTTON_HEIGHT
+            , "Settings");
+        m_menu_buttons[home_settings]->imageFilePath("menu.bmp");
+        m_menu_buttons[home_settings]->drawCallback(handleDrawBmpButton, this);
+        m_menu_buttons[home_settings]->callback(handleMainMenu, this);
+        m_menu_buttons[home_settings]->draw();
+        m_prev_state = m_state;
     }
 
     void mainMenu()
     {
         m_state = view_state_t::MAIN_MENU;
-        // display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
+        display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
+        _deleteMenuButtons();
+        
+        gui::wf_main_menu_t wf;
+        m_menu_buttons[main_menu_load] = new gui::button_base_c(wf.load_button.x
+            , wf.load_button.y
+            , DEFAULT_MENU_BUTTON_WIDTH
+            , DEFAULT_MENU_BUTTON_HEIGHT
+            , "Load");
+        m_menu_buttons[main_menu_back] = new gui::button_base_c(wf.back_button.x
+            , wf.back_button.y
+            , DEFAULT_MENU_BUTTON_WIDTH
+            , DEFAULT_MENU_BUTTON_HEIGHT
+            , "Back");
+        
+        m_menu_buttons[main_menu_load]->drawCallback(handleDrawButton, this);
+        /// TODO: set the callback for the load button
+        m_menu_buttons[main_menu_load]->draw();
 
-        // m_test_button.draw();
-        // m_settings_menu_button.draw();
+        m_menu_buttons[main_menu_back]->drawCallback(handleDrawButton, this);
+        m_menu_buttons[main_menu_back]->callback(handleHomeScreen, this);
+        m_menu_buttons[main_menu_back]->draw();
+        m_prev_state = m_state;
     }
     //////////////////// ~Main Window Rendering /////////////////////
 
@@ -172,7 +235,8 @@ public:
     /// @param names The names of the macros
     /// @param file_paths The file paths of the images to display on the buttons
     /// @note This function will create buttons for the macros in the first available slots
-    void createHomeScreenMacroButtons(size_t const num_macros, macro::macro_c const *macros, String const *names, String const *file_paths)
+    void createHomeScreenMacroButtons(
+        size_t const num_macros, macro::macro_c const *macros, String const *names, String const *file_paths)
     {
         for (size_t i = 0; i < num_macros; i++)
         {
@@ -216,10 +280,32 @@ private:
             }
         }
     }
+
+    void _deleteMenuButtons()
+    {
+        for (size_t i = 0; i < MENU_BTN_COUNT(m_menu_buttons); i++)
+        {
+            if (m_menu_buttons[i] != nullptr)
+            {
+                delete m_menu_buttons[i];
+                m_menu_buttons[i] = nullptr;
+            }
+        }
+    }
     //////////////////// ~Managing button creations /////////////////////
 
     ///////////////////// BUTTON CALLBACK HANDLERS /////////////////////
 public:
+    static void handleMainMenu(void *obj)
+    {
+        if (obj) static_cast<view_c*>(obj)->mainMenu();
+    }
+
+    static void handleHomeScreen(void *obj)
+    {
+        if (obj) static_cast<view_c*>(obj)->homeScreen();
+    }
+
     /// @brief Handler for drawing standard buttons
     static void handleDrawButton(void *obj, void *button)
     {
@@ -236,14 +322,22 @@ private:
     /// @param button The button to draw
     void _drawButton(gui::button_base_c const & button)
     {
-        display::drawButton(button.minX(), button.minY(), button.width(), button.height(), button.fillColour(), button.textColour(), button.borderColour(), button.name());
+        display::drawButton(button.minX()
+        , button.minY()
+        , button.width()
+        , button.height()
+        , button.fillColour()
+        , button.textColour()
+        , button.borderColour()
+        , button.name());
     }
 
     /// @brief Draw a bmp button
     /// @param button The button to draw
     void _drawButtonBmp(gui::button_base_c const & button)
     {
-        display::drawBmp("/icons/" + button.imageFilePath(), button.minX(), button.minY(), button.width(), button.height(), true);
+        display::drawBmp(
+            "/icons/" + button.imageFilePath(), button.minX(), button.minY(), button.width(), button.height(), true);
     }
     //////////////////// ~BUTTON CALLBACK HANDLERS /////////////////////
 
@@ -257,6 +351,9 @@ private:
         {
         case view_state_t::HOME:
             _homeScreenTouchHandler(tp);
+            break;
+        case view_state_t::MAIN_MENU:
+            _menuTouchHandler(tp);
             break;
         // Add cases for other wireframes as needed
         default:
@@ -275,15 +372,27 @@ private:
 
             if (_isPointInsideButton(tp, m_active_macros[i]))
             {
-                m_active_macros[i]->press();
-                return; // Only one button can be pressed at a time
+                if (m_active_macros[i]->press()) return;
             }
         }
 
         // Check if the touch point intersects with the settings menu button
-        if (_isPointInsideButton(tp, &m_settings_menu_button))
+        if (_isPointInsideButton(tp, m_menu_buttons[home_settings]))
         {
-            m_settings_menu_button.press();
+            m_menu_buttons[home_settings]->press();
+        }
+    }
+
+    void _menuTouchHandler(TSPoint const &tp)
+    {
+        for (size_t i = 0; i < MENU_BTN_COUNT(m_menu_buttons); i++)
+        {
+            if (m_menu_buttons[i] == nullptr) continue;
+
+            if (_isPointInsideButton(tp, m_menu_buttons[i]))
+            {
+                if (m_menu_buttons[i]->press()) return;
+            }
         }
     }
 
