@@ -69,6 +69,9 @@ private:
     /// @brief Handler to send the macro
     static void handleSendMacro(void* obj)
     {
+#ifdef DISABLE_MACRO_BUTTONS
+        return;
+#endif
         if (obj) static_cast<macro_button_c*>(obj)->_sendMacro();
     }
 };

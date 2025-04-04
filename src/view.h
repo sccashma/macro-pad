@@ -29,7 +29,12 @@
 namespace view
 {
 
-enum class view_state_t
+/// @brief Helper macro to get the number of macro button pointers in an array
+/// @param x gui::macro_button_c*: The array
+/// @return The number of macro buttons in the array
+#define MACRO_BTN_COUNT(x) sizeof(m_active_macros) / sizeof(gui::macro_button_c*)
+
+typedef enum view_state_t
 {
     NONE = 0,
     LOADING,
@@ -38,15 +43,15 @@ enum class view_state_t
     MACRO_SELECT,
     MACRO_PLACE,
     ERROR
-};
+} view_state_t;
 
-} // namespace view
 using buttonCallback = void (*)(void*);
 
 class view_c
 {
 private:
     view_state_t m_state;
+    gui::button_base_c m_settings_menu_button;
     gui::button_base_c m_test_button; //< test button (for testing only)
     gui::macro_button_c* m_active_macros[MACRO_PLACE_OPTIONS];
 
@@ -57,6 +62,16 @@ public:
     {
         this->m_test_button = gui::button_base_c(0, 0, DEFAULT_MENU_BUTTON_WIDTH, DEFAULT_MENU_BUTTON_HEIGHT, "# Macros");
         this->m_test_button.drawCallback(handleDrawButton, this);
+
+        gui::wf_home_screen_t wf;
+
+        this->m_settings_menu_button = gui::button_base_c(wf.menu_button.x
+            , wf.menu_button.y
+            , DEFAULT_MACRO_BUTTON_WIDTH
+            , DEFAULT_MACRO_BUTTON_HEIGHT
+            , "Settings");
+        this->m_settings_menu_button.imageFilePath("menu.bmp");
+        this->m_settings_menu_button.drawCallback(handleDrawBmpButton, this);
 
         for (size_t i = 0; i < MACRO_PLACE_OPTIONS; i++)
         {
@@ -93,11 +108,12 @@ public:
         m_state = view_state_t::HOME;
         display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
 
-        for (int i = 0; i < sizeof(m_active_macros) / sizeof(gui::macro_button_c*); i++)
+        for (int i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
         {
             if (m_active_macros[i] == nullptr) continue;
             m_active_macros[i]->draw();
         }
+        m_settings_menu_button.draw();
     }
     //////////////////// ~Main Window Rendering /////////////////////
 
@@ -137,9 +153,7 @@ public:
 
             if (touched(&tp))
             {
-                // m_test_button.press();
-                // delay(1000);
-                // renderTestScreen();
+                _handleTouch(tp);
             }
         };
     }
@@ -170,18 +184,16 @@ private:
         gui::wf_home_screen_t wf;
 
         // Find the first available slot
-        for (size_t i = 0; i < sizeof(m_active_macros) / sizeof(gui::macro_button_c*); i++)
+        for (size_t i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
         {
             if (m_active_macros[i] != nullptr) continue;
 
             m_active_macros[i] = new gui::macro_button_c(*macro, *name, *file_path);
-
             m_active_macros[i]->setPos(wf.macro_buttons[i].x, wf.macro_buttons[i].y);
             m_active_macros[i]->width(wf.macro_buttons[i].width);
             m_active_macros[i]->height(wf.macro_buttons[i].height);
-
             m_active_macros[i]->drawCallback(handleDrawBmpButton, this);
-            break; // no need to continue
+            break;
         }
     }
 
@@ -189,7 +201,7 @@ private:
     /// @details This is used to delete all active macros when they are no longer needed
     void _deleteActiveMacros()
     {
-        for (size_t i = 0; i < sizeof(m_active_macros) / sizeof(gui::macro_button_c*); i++)
+        for (size_t i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
         {
             if (m_active_macros[i] != nullptr)
             {
@@ -228,6 +240,57 @@ private:
         display::drawBmp("/icons/" + button.imageFilePath(), button.minX(), button.minY(), button.width(), button.height(), true);
     }
     //////////////////// ~BUTTON CALLBACK HANDLERS /////////////////////
+
+    ///////////////////// TOUCH HANDLERS /////////////////////
+private:
+    /// @brief Handle touch input and determine which button was pressed
+    /// @param tp The touch point
+    void _handleTouch(TSPoint const &tp)
+    {
+        switch (m_state)
+        {
+        case view_state_t::HOME:
+            _homeScreenTouchHandler(tp);
+            break;
+        // Add cases for other wireframes as needed
+        default:
+            break;
+        }
+    }
+
+    /// @brief Handle touch input for the home screen
+    /// @param tp The touch point
+    void _homeScreenTouchHandler(TSPoint const &tp)
+    {
+        // Check if the touch point intersects with any active macro buttons
+        for (size_t i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
+        {
+            if (m_active_macros[i] == nullptr) continue;
+
+            if (_isPointInsideButton(tp, m_active_macros[i]))
+            {
+                m_active_macros[i]->press();
+                return; // Only one button can be pressed at a time
+            }
+        }
+
+        // Check if the touch point intersects with the settings menu button
+        if (_isPointInsideButton(tp, &m_settings_menu_button))
+        {
+            m_settings_menu_button.press();
+        }
+    }
+
+    /// @brief Check if a touch point is inside a button
+    /// @param tp The touch point
+    /// @param button The button to check
+    /// @return True if the touch point is inside the button, false otherwise
+    bool _isPointInsideButton(TSPoint const &tp, gui::button_base_c const *button)
+    {
+        return (tp.x >= button->minX() && tp.x <= button->maxX() &&
+                tp.y >= button->minY() && tp.y <= button->maxY());
+    }
+    //////////////////// ~TOUCH HANDLERS ///////////////////// 
 };
 
 } // namespace view

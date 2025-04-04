@@ -1,4 +1,7 @@
 
+// #define DEBUG
+#define DISABLE_MACRO_BUTTONS ///< Disable macro buttons for development purposes
+
 #include "src/ILI9341_driver.h"
 #include "src/tft_touch.h"
 #include "src/sd_utils.h"
@@ -8,7 +11,6 @@
 #include "src/view.h"
 #include "src/presenter.h"
 
-// #define DEBUG
 
 void setup()
 {

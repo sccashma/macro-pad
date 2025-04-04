@@ -135,56 +135,66 @@ public:
             m_draw_function(m_draw_context, this);
         }
     }
-
+    
     /// @brief Set the active state of the button
     /// @param active The active state of the button
     void active(bool active) { this->m_active = active; }
-
+    
     /// @brief Get the active state of the button
     /// @return bool: The active state of the button
     bool active() const { return this->m_active; }
-
+    
     /// @brief Set the file path name for the image to be displayed on the button
     /// @param file The file path name
     void imageFilePath(String const file) { this->m_image_file = file; }
-  
+    
     /// @brief Get the file path name for the image to be displayed on the button
     /// @return String: The file path name
     String imageFilePath() const { return this->m_image_file; }
-  
+    
     /// @brief Set the name of the button
     /// @param name The name of the button
     void name(String const name) { this->m_name = name; }
-  
+    
     /// @brief Get the name of the button
     /// @return String: The name of the button
     String name() const { return this->m_name; }
-
+    
     /// @brief Get the x coordinate of the button
     /// @return int16_t: The x coordinate of the button
     /// @note This is the top left corner of the button
     int16_t minX() const { return this->m_x; }
-
+    
     /// @brief Set the x coordinate of the button
     /// @param x The x coordinate of the button
     /// @note This is the top left corner of the button
     void minX(int16_t const x) { this->m_x = x; }
-
+    
     /// @brief Get the y coordinate of the button
     /// @return int16_t: The y coordinate of the button
     /// @note This is the top left corner of the button
     int16_t minY() const { return this->m_y; }
-
+    
     /// @brief Set the y coordinate of the button
     /// @param y The y coordinate of the button
     /// @note This is the top left corner of the button
     void minY(int16_t const y) { this->m_y = y; }
 
+    /// @brief Get the maximum x coordinate of the button
+    /// @return int16_t: The maximum x coordinate of the button
+    /// @note This is the bottom right corner of the button
+    int16_t maxX() const { return this->m_x + this->m_width; }
+
+    /// @brief Get the maximum y coordinate of the button
+    /// @return int16_t: The maximum y coordinate of the button
+    /// @note This is the bottom right corner of the button
+    int16_t maxY() const { return this->m_y + this->m_height; }
+    
     /// @brief Get the width of the button
     /// @return int16_t: The width of the button
     /// @note This is the width of the button in pixels
     int16_t width() const { return this->m_width; }
-
+    
     /// @brief Set the width of the button
     /// @param x The width of the button
     /// @note This is the width of the button in pixels
