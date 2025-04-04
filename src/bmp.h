@@ -1,7 +1,7 @@
 /*
     DISCLAIMER: bmp.h is from the Adafruit GFX library example "ImgViewerBmp".
     It is used to draw BMP images from the SD card to the screen. The code is not mine, but I have modified it to
-    work with this project.
+    work with this project and provided some optimisations.
     Original works can be found here: https://github.com/moononournation/Arduino_GFX
 */
 
@@ -48,39 +48,72 @@ public:
     }
 
 private:
-    // draw true colour bitmap at (u,v) handles 24/32 not 16bpp yet
+    unsigned long long previousMillis = 0;
+    unsigned long long currentMillis = 0;
+
+    /// @brief Draw the bitmap image to the screen
+    /// @param f file pointer to the bitmap file
+    /// @param u starting x coordinate
+    /// @param v starting y coordinate
+    /// @param xend width of the image to draw
+    /// @param yend height of the image to draw
+    /// @note This function will draw the image from the bottom up, so if using yend, it will stop after drawing yend
+    /// lines (Default: 0, which means the whole image)
     void drawbmtrue(File *f, int16_t const u, int16_t const v, uint32_t const xend, int16_t yend = 0)
     {
+        previousMillis = millis();
         if (yend == 0)
         {
             yend = bmheight;
         }
-        
-        int16_t i, ystart;
-        uint32_t x, y;
-        byte r, g, b;
-        bm_bytes_per_line = ((bm_bits_per_pixel * bmwidth + 31) / 32) * 4; //bytes per line, due to 32bit chunks
+
+        int16_t ystart;
+        uint32_t y;
+        bm_bytes_per_line = ((bm_bits_per_pixel * bmwidth + 31) / 32) * 4; // bytes per line, due to 32-bit chunks
         ystart = 0;
         if (bmheight > _heightLimit)
         {
-            ystart = bmheight - _heightLimit; //don't draw if it's outside screen
+            ystart = bmheight - _heightLimit; // don't draw if it's outside the screen
         }
+
+        // Allocate a buffer for one line of pixel data
+        uint8_t *lineBuffer = (uint8_t *)malloc(bm_bytes_per_line);
+        if (!lineBuffer)
+        {
+            return; // Exit if memory allocation fails
+        }
+
         for (y = ystart; y < yend; y++)
-        {                                   //invert in calculation (y=0 is bottom)
-            f->seek(bmdataptr + y * bm_bytes_per_line); //seek at start of line
-            for (x = 0; x < xend; x++)
+        {
+            // Seek to the start of the current line
+            f->seek(bmdataptr + y * bm_bytes_per_line);
+
+            // Read the entire line into the buffer
+            f->read(lineBuffer, bm_bytes_per_line);
+
+            // Process the line and populate bmpRow
+            for (uint32_t x = 0; x < xend; x++)
             {
-                b = f->read();
-                g = f->read();
-                r = f->read();
-                if (bm_bits_per_pixel == 32)
-                {
-                    f->read(); //dummy byte for 32bit
-                }
-                bmpRow[x] = (_useBigEndian) ? ((r & 0xf8) | (g >> 5) | ((g & 0x1c) << 11) | ((b & 0xf8) << 5)) : (((r & 0xf8) << 8) | ((g & 0xfc) << 3) | (b >> 3));
+                uint8_t b = lineBuffer[x * (bm_bits_per_pixel / 8)];
+                uint8_t g = lineBuffer[x * (bm_bits_per_pixel / 8) + 1];
+                uint8_t r = lineBuffer[x * (bm_bits_per_pixel / 8) + 2];
+
+                bmpRow[x] = convertToRGB565(r, g, b); // Convert to RGB565 format
             }
+
+            // Invoke the callback for the current line
             _bmpDrawCallback(u, v + bmheight - 1 - y, bmpRow, xend, 1);
         }
+
+        // Free the allocated buffer
+        free(lineBuffer);
+        currentMillis = millis();
+        Serial.print("Time taken to draw: ");
+        Serial.println(currentMillis - previousMillis);
+    }
+
+    uint16_t convertToRGB565(uint8_t r, uint8_t g, uint8_t b) {
+        return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
     }
 
     void getbmpparms(File *f)
