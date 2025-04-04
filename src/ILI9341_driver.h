@@ -39,12 +39,17 @@ void initialiseTFT()
 /// @param height The height of the canvas.
 /// @param text The text to display.
 /// @param textColor The color of the text.
-/// @param bgColor The background color of the canvas.
 /// @param textSize The size of the text.
-void drawTextInCanvas(int16_t x, int16_t y, int16_t width, int16_t height, const char *text, uint16_t textColor, uint16_t bgColor, uint8_t textSize = 1) {
-    // Clear the canvas area
-    // display::tft->fillRect(x, y, width, height, bgColor);
-
+void drawTextInCanvas(
+    int16_t x, 
+    int16_t y, 
+    int16_t width, 
+    int16_t height, 
+    const char *text, 
+    uint16_t textColor, 
+    uint8_t textSize = 1
+) 
+{
     // Set text properties
     display::tft->setTextColor(textColor);
     display::tft->setTextSize(textSize);
@@ -190,7 +195,17 @@ uint8_t textPixelHeight(uint8_t const text_size)
 /// @param colour The colour of the button
 /// @param text The text to display on the button, if 0, or not specified, the text will be half the button height
 /// @param text_size The size of the text to display on the button
-void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16_t fill_colour, uint16_t text_colour, uint16_t border_colour, String text = "", uint8_t text_size = 0)
+void drawButton(
+    int16_t const x, 
+    int16_t const y, 
+    int16_t x_, 
+    int16_t y_, 
+    uint16_t fill_colour, 
+    uint16_t text_colour, 
+    uint16_t border_colour, 
+    String text = "", 
+    uint8_t text_size = 0
+)
 {
     tft->fillRect(x, y, x_, y_, fill_colour);
     tft->drawRect(x, y, x_, y_, border_colour);
@@ -200,12 +215,7 @@ void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16
         uint8_t scaled_font_size = text_size;
         if (text_size == 0) scaled_font_size = calculateTextSize(y_);
         tft->setTextSize(scaled_font_size);
-
-        uint8_t y_offset = (y_ - textPixelHeight(scaled_font_size)) / 2; // center the text as best we can
-
-        tft->setCursor(x + 10, y + y_offset);
-        tft->setTextColor(text_colour);
-        tft->print(text);
+        drawTextInCanvas(x, y, x_, y_, text.c_str(), text_colour, scaled_font_size);
     }
 }
 
