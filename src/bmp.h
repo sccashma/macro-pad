@@ -10,6 +10,9 @@
 
 #include <SD.h>
 
+namespace bmp
+{
+
 typedef void(BMP_DRAW_CALLBACK)(int16_t x, int16_t y, uint16_t *bitmap, int16_t w, int16_t h);
 
 class BmpClass
@@ -29,34 +32,14 @@ public:
         getbmpparms(f);
 
         //validate bitmap
-        if ((bmtype == 19778) && (bmwidth > 0) && (bmheight > 0) && (bmbpp > 0))
+        if ((bmtype == 19778) && (bmwidth > 0) && (bmheight > 0) && (bm_bits_per_pixel > 0))
         {
             u = x;
             v = y;
-            xend = x + width;
+            xend = width;
 
             bmpRow = (uint16_t *)malloc(xend * 2);
-            // if (!bmpRow)
-            // {
-            //     Serial.println(F("bmpRow malloc failed."));
-            // }
-            if (bmbpp < 9)
-            {
-                bmplt = (uint16_t *)malloc(bmpltsize * 2);
-                // if (!bmplt)
-                // {
-                //     Serial.println(F("bmplt malloc failed."));
-                // }
-                bmloadplt(f); //load palette if palettized
-                drawbmpal(f, u, v, xend);
-                free(bmplt);
-            }
-            else if (bmbpp == 16)
-            {
-                // TODO: bpp 16 should have 3 pixel types
-                drawbmRgb565(f, u, v, xend);
-            }
-            else
+            if (bmpRow)
             {
                 drawbmtrue(f, u, v, xend);
             }
@@ -65,100 +48,13 @@ public:
     }
 
 private:
-    void bmloadplt(File *f)
-    {
-        byte r, g, b;
-        if (bmpltsize == 0)
-        {
-            bmpltsize = 1 << bmbpp; //load default palette size
-        }
-        f->seek(54); //palette position in type 0x28 bitmaps
-        for (int16_t i = 0; i < bmpltsize; i++)
-        {
-            b = f->read();
-            g = f->read();
-            r = f->read();
-            f->read(); //dummy byte
-            bmplt[i] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
-        }
-    }
-
-    void drawbmpal(File *f, int16_t u, int16_t v, uint32_t xend)
-    {
-        byte bmbitmask;
-        int16_t i, ystart, bmppb, p, d;
-        int16_t x, y;
-        uint16_t c;
-        bmbpl = ((bmbpp * bmwidth + 31) / 32) * 4; //bytes per line
-        bmppb = 8 / bmbpp;                         //pixels/byte
-        bmbitmask = ((1 << bmbpp) - 1);            //mask for each pixel
-        ystart = 0;
-        if (bmheight > _heightLimit)
-        {
-            ystart = bmheight - _heightLimit; //don't draw if it's outside screen
-        }
-        for (y = ystart; y < bmheight; y++)
-        {                                   //invert in calculation (y=0 is bottom)
-            f->seek(bmdataptr + y * bmbpl); //seek to start of line
-            x = 0;
-            p = 0;
-            while (x < xend)
-            {
-                if (p < 1)
-                {
-                    d = f->read();
-                    p = bmppb;
-                }
-                d = d << bmbpp;
-                c = bmplt[(bmbitmask & (d >> 8))];
-                bmpRow[x] = (_useBigEndian) ? ((c >> 8) | (c << 8)) : c;
-
-                p--;
-                x++;
-            }
-            _bmpDrawCallback(u, v + bmheight - 1 - y, bmpRow, xend, 1);
-        }
-    }
-
-    // draw 16-bit colour (RGB565) bitmap
-    void drawbmRgb565(File *f, int16_t u, int16_t v, uint32_t xend)
-    {
-        int16_t i, ystart;
-        uint32_t x, y;
-        byte lo, hi;
-        bmbpl = ((bmbpp * bmwidth + 31) / 32) * 4; //bytes per line, due to 32bit chunks
-        ystart = 0;
-        if (bmheight > _heightLimit)
-        {
-            ystart = bmheight - _heightLimit; //don't draw if it's outside screen
-        }
-        for (y = ystart; y < bmheight; y++)
-        {                                   //invert in calculation (y=0 is bottom)
-            f->seek(bmdataptr + (y * bmbpl)); //seek at start of line
-            for (x = 0; x < xend; x++)
-            {
-                lo = f->read();
-                hi = f->read();
-                if (_useBigEndian)
-                {
-                    bmpRow[x] = hi | lo << 8;
-                }
-                else
-                {
-                    bmpRow[x] = lo | hi << 8;
-                }
-            }
-            _bmpDrawCallback(u, v + bmheight - 1 - y, bmpRow, xend, 1);
-        }
-    }
-
     // draw true colour bitmap at (u,v) handles 24/32 not 16bpp yet
-    void drawbmtrue(File *f, int16_t u, int16_t v, uint32_t xend)
+    void drawbmtrue(File *f, int16_t const u, int16_t const v, uint32_t const xend)
     {
         int16_t i, ystart;
         uint32_t x, y;
         byte r, g, b;
-        bmbpl = ((bmbpp * bmwidth + 31) / 32) * 4; //bytes per line, due to 32bit chunks
+        bm_bytes_per_line = ((bm_bits_per_pixel * bmwidth + 31) / 32) * 4; //bytes per line, due to 32bit chunks
         ystart = 0;
         if (bmheight > _heightLimit)
         {
@@ -166,13 +62,13 @@ private:
         }
         for (y = ystart; y < bmheight; y++)
         {                                   //invert in calculation (y=0 is bottom)
-            f->seek(bmdataptr + y * bmbpl); //seek at start of line
+            f->seek(bmdataptr + y * bm_bytes_per_line); //seek at start of line
             for (x = 0; x < xend; x++)
             {
                 b = f->read();
                 g = f->read();
                 r = f->read();
-                if (bmbpp == 32)
+                if (bm_bits_per_pixel == 32)
                 {
                     f->read(); //dummy byte for 32bit
                 }
@@ -197,43 +93,15 @@ private:
         //files may vary here, if !=28, unsupported type, put default values
         bmwidth = 0;
         bmheight = 0;
-        bmbpp = 0;
+        bm_bits_per_pixel = 0;
         bmpltsize = 0;
         if ((bmhdrsize == 0x28) || (bmhdrsize == 0x38))
         {
             bmwidth = h[18] + (h[19] << 8);   //width
             bmheight = h[22] + (h[23] << 8);  //height
-            bmbpp = h[28] + (h[29] << 8);     //bits per pixel
+            bm_bits_per_pixel = h[28] + (h[29] << 8);     //bits per pixel
             bmpltsize = h[46] + (h[47] << 8); //palette size
         }
-        // Serial.printf("bmtype: %d, bmhdrsize: %d, bmwidth: %d, bmheight: %d, bmbpp: %d\n", bmtype, bmhdrsize, bmwidth, bmheight, bmbpp);
-    }
-
-    byte isbmp(char n[])
-    { //check if bmp extension
-        int16_t k;
-        k = strlen(n);
-        if (k < 5)
-        {
-            return 0; //name not long enough
-        }
-        if (n[k - 1] != 'P')
-        {
-            return 0;
-        }
-        if (n[k - 2] != 'M')
-        {
-            return 0;
-        }
-        if (n[k - 3] != 'B')
-        {
-            return 0;
-        }
-        if (n[k - 4] != '.')
-        {
-            return 0;
-        }
-        return 1; //passes all tests
     }
 
     BMP_DRAW_CALLBACK *_bmpDrawCallback;
@@ -241,10 +109,11 @@ private:
     int16_t _heightLimit;
 
     uint16_t bmtype, bmdataptr;                              //from header
-    uint32_t bmhdrsize, bmwidth, bmheight, bmbpp, bmpltsize; //from DIB Header
-    uint16_t bmbpl;                                          //bytes per line- derived
+    uint32_t bmhdrsize, bmwidth, bmheight, bm_bits_per_pixel, bmpltsize; //from DIB Header
+    uint16_t bm_bytes_per_line;                                          //bytes per line- derived
     uint16_t *bmplt;                                        //palette- stored encoded for LCD
     uint16_t *bmpRow;
 };
 
+} // namespace bmp
 #endif //__BMP_H__

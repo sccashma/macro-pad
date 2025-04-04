@@ -63,9 +63,7 @@ String parseCodeEntry(String entry)
 {
     size_t opening = entry.indexOf('"');
     size_t closing = entry.lastIndexOf('"');
-
-    String result = entry.substring(opening + 1, closing);
-    return result;
+    return entry.substring(opening + 1, closing);
 }
 
 } // end csv

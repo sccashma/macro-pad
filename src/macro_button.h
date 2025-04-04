@@ -19,7 +19,10 @@ namespace gui
 class macro_button_c : public button_base_c
 {
 public:
-    macro_button_c() = delete; // We don't want a default constructor
+    /// @brief Default constructor
+    macro_button_c()
+    {
+    }
 
     /// @brief Constructor
     /// @param macro The macro to send on button press
@@ -28,8 +31,8 @@ public:
     macro_button_c(macro::macro_c macro, String const name, String const file_path)
     : button_base_c(0, 0, DEFAULT_MACRO_BUTTON_WIDTH, DEFAULT_MACRO_BUTTON_HEIGHT, name.c_str())
     , m_macro(macro)
-    , m_file_path(file_path)
     {
+        this->imageFilePath(file_path);
         this->callback(macro_button_c::handleSendMacro, this);
     }
 
@@ -38,7 +41,6 @@ public:
     macro_button_c(macro_button_c const& rhs)
     : button_base_c(rhs)
     , m_macro(rhs.m_macro)
-    , m_file_path(rhs.m_file_path)
     {
         this->callback(macro_button_c::handleSendMacro, this);
     }
@@ -57,7 +59,6 @@ public:
 
 private:
     macro::macro_c m_macro; ///< The macro associated with the button
-    String m_file_path;     ///< The file path of the macro's bmp
 
     /// @brief Play the macro
     void _sendMacro()

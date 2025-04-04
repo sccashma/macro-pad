@@ -17,6 +17,7 @@
 #define __MODEL_H__
 
 #include "sd_utils.h"
+#include "macro.h"
 
 namespace model
 {
@@ -37,6 +38,19 @@ public:
     int16_t availableMacros()
     {
         return m_macro_count;
+    }
+
+    /// @brief Load the macros from the SD card
+    /// @param ids The ids of the macros to load
+    /// @param size The number of macros to load
+    /// @param names The names of the loaded macros
+    /// @param file_paths The file paths of the loaded macros
+    /// @param macros The loaded macros
+    /// @return size_t: The number of macros loaded
+    /// @note This function will load the macros from the SD card and store them in the provided arrays
+    size_t loadMacros(uint16_t const *ids, size_t const size, String *names, String *file_paths, macro::macro_c *macros)
+    {
+        return _loadMacros(ids, size, names, file_paths, macros);
     }
 
 private:
@@ -64,6 +78,52 @@ private:
 
         file.close();
         return count;
+    }
+
+    /// @brief load the macro's in the active_macro's array
+    size_t _loadMacros(uint16_t const *ids, size_t const size, String *names, String *file_paths, macro::macro_c *macros)
+    {   
+        size_t count = 0; // count how many macros are loaded
+        File file = SD.open("macros.csv");
+        
+        while(!file)
+        {
+            delay(500);
+            file = SD.open("macros.csv"); // try again
+        }
+        
+        sd::readLine(&file); // read header
+        
+        size_t idx = 0; // index for the data arrays
+        while(file.available())
+        {
+            String line = sd::readLine(&file);
+
+            String id;
+            String entries[64];
+            csv::parseCSVLine(line, entries, 64);
+            id = entries[0];
+            
+            for (int i = 0; i < size; i++)
+            {
+                if (id == String(ids[i])) // Only load the ones requested
+                {
+                    names[i] = entries[1];
+                    file_paths[i] = entries[2];
+                    
+                    macro::macro_c macro;
+                    String code_string = csv::parseCodeEntry(line);
+                    macro.initialiseCodes(code_string);
+                    macros[i] = macro; // assign the macro to the array
+                    count++;
+                    idx++;
+                    break; // no need to check the rest of the ids
+                }
+            }
+        }
+        file.close();
+
+        return count; // return the number of macros loaded
     }
 };
 

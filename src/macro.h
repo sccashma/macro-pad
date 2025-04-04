@@ -27,8 +27,8 @@ public:
     /// @brief constructor for the macro_c type
     macro_c()
     {
-        this->id = NULL;
-        this->name = "";
+        // this->id = NULL;
+        // this->name = "";
         for (size_t i = 0; i < this->codes_size; i++)
         {
             this->codes[i] = 0;
@@ -40,8 +40,8 @@ public:
     /// @return macro_c&: A reference to this macro
     macro_c& operator=(macro_c const &other)
     {
-        this->id = other.id;
-        this->name = other.name;
+        // this->id = other.id;
+        // this->name = other.name;
         for (size_t i = 0; i < this->codes_size; i++)
         {
             this->codes[i] = other.codes[i];
@@ -72,8 +72,9 @@ public:
         }
     }
 
-    uint8_t id;                                 ///< The id of the macro
-    String name;                                ///< The name of the macro
+    // uint8_t id;                                 ///< The id of the macro
+    // String name;                                ///< The name of the macro
+private:
     size_t const codes_size = KEY_CODES_MAX;    ///< The size of the key codes array
     uint8_t codes[KEY_CODES_MAX];               ///< The key codes for the macro
 };

@@ -5,7 +5,9 @@
 #define __ILI9341_DRIVER_H__
 
 #include <Arduino_GFX_Library.h>
+#include "bmp.h"
 #include "constants.h"
+#include "sd_utils.h"
 
 namespace display
 {
@@ -90,7 +92,7 @@ uint8_t textPixelHeight(uint8_t const text_size)
 /// @param text_size The size of the text to display on the button
 void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16_t fill_colour, uint16_t text_colour, uint16_t border_colour, String text = "", uint8_t text_size = 0)
 {
-   tft->fillRect(x, y, x_, y_, fill_colour);
+    tft->fillRect(x, y, x_, y_, fill_colour);
     tft->drawRect(x, y, x_, y_, border_colour);
 
     if (text != "")
@@ -107,6 +109,13 @@ void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16
     }
 }
 
+/// @brief Callback function to send to the bmp class draw function
+/// @note See bmp.h for usage
+static void bmpDrawCallback(int16_t x, int16_t y, uint16_t *bitmap, int16_t w, int16_t h)
+{
+    tft->draw16bitRGBBitmap(x, y, bitmap, w, h);
+}
+
 /// @brief Draw a bitmap on the screen
 /// @param x The x coordinate of the bitmap
 /// @param y The y coordinate of the bitmap
@@ -114,14 +123,26 @@ void drawButton(int16_t const x, int16_t const y, int16_t x_, int16_t y_, uint16
 /// @param w The width of the bitmap
 /// @param h The height of the bitmap
 /// @param border If true, draw a border around the bitmap (default: false)
-static void bmpDrawCallback(int16_t x, int16_t y, uint16_t *bitmap, int16_t w, int16_t h, bool border = false)
+static void drawBmp(String const file_path, int16_t x, int16_t y, int16_t w, int16_t h, bool border = false)
 {
-    tft->draw16bitRGBBitmap(x, y, bitmap, w, h);
+    static bmp::BmpClass bmp;
+    File image_file = SD.open(file_path);
+
+    if(!image_file)
+    {
+        // Couldn't open the file, display a generic button instead
+        drawButton(x, y, w, h, BATTLESHIP_GREY, SILVER, SILVER, "?");
+        return;
+    }
+
+    bmp.draw(&image_file, bmpDrawCallback, false, x, y, w, h);
 
     if (border)
     {
         tft->drawRect(x, y, w, h, ANTI_FLASH_WHITE);
     }
+
+    image_file.close();
 }
 
 } // namespace display

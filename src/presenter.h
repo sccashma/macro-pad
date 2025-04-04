@@ -20,8 +20,16 @@
 #include "model.h"
 #include "view.h"
 
+/// tmp ///
+#include "macro.h"
+///~tmp ///
+
 namespace presenter
 {
+
+/// Store the current macro's
+/// TODO: Store this to eeprom/SD and load it on startup.
+uint16_t constexpr startup_macros[7] = {30, 8, 43, 47, 31, 32, 37};
 
 class presenter_c
 {
@@ -39,12 +47,31 @@ public:
     /// @details This invokes the main loop for the application
     void run()
     {
-        m_view->setCallback(handleAvailableMacros, this);
-        m_view->renderTestScreen();
+        m_view->loadScreen();
+
+        size_t num_startup_macros = MACRO_PLACE_OPTIONS;
+        String macro_names[num_startup_macros];
+        String macro_file_paths[num_startup_macros];
+        macro::macro_c macros[num_startup_macros];
+        size_t count = m_model->loadMacros(startup_macros, num_startup_macros, macro_names, macro_file_paths, macros);
+        
+        m_view->createHomeScreenMacroButtons(count, macros, macro_names, macro_file_paths);
+        
+        //////////////////////////////////////////////////////////////////////////
+        // ******************************************************************** //
+        // 2.1. What macros are needed by the view?                             //
+        // 2.2. Get X macros info from model (by id???)                         //
+        // 2.3. Create macro buttons in view                                    //
+        // ******************************************************************** //
+        //////////////////////////////////////////////////////////////////////////
+
+        m_view->homeScreen();
+
         m_view->run();
     }
 
     /// @brief Handler to get the number of available macros
+    /// @note: only used for testing purposes
     static void handleAvailableMacros(void *obj)
     {
         if (obj) static_cast<presenter_c*>(obj)->_availableMacros();
