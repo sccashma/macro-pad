@@ -20,7 +20,7 @@ class BmpClass
 public:
     void draw(
         File *f, BMP_DRAW_CALLBACK *bmpDrawCallback, bool useBigEndian,
-        int16_t x, int16_t y, int16_t width, int16_t heightLimit)
+        int16_t x, int16_t y, int16_t width, int16_t heightLimit, int16_t yend = 0)
     {
         _bmpDrawCallback = bmpDrawCallback;
         _useBigEndian = useBigEndian;
@@ -41,7 +41,7 @@ public:
             bmpRow = (uint16_t *)malloc(xend * 2);
             if (bmpRow)
             {
-                drawbmtrue(f, u, v, xend);
+                drawbmtrue(f, u, v, xend, yend);
             }
             free(bmpRow);
         }
@@ -49,8 +49,13 @@ public:
 
 private:
     // draw true colour bitmap at (u,v) handles 24/32 not 16bpp yet
-    void drawbmtrue(File *f, int16_t const u, int16_t const v, uint32_t const xend)
+    void drawbmtrue(File *f, int16_t const u, int16_t const v, uint32_t const xend, int16_t yend = 0)
     {
+        if (yend == 0)
+        {
+            yend = bmheight;
+        }
+        
         int16_t i, ystart;
         uint32_t x, y;
         byte r, g, b;
@@ -60,7 +65,7 @@ private:
         {
             ystart = bmheight - _heightLimit; //don't draw if it's outside screen
         }
-        for (y = ystart; y < bmheight; y++)
+        for (y = ystart; y < yend; y++)
         {                                   //invert in calculation (y=0 is bottom)
             f->seek(bmdataptr + y * bm_bytes_per_line); //seek at start of line
             for (x = 0; x < xend; x++)

@@ -93,54 +93,12 @@ public:
         display::tft->fillScreen(0x0000);
     }
 
-    ///////////////////// Main Window Rendering /////////////////////
-
-    /// @brief Display the loading screen
-    void loadScreen()
-    {
-        m_state = view_state_t::LOADING;
-        display::tft->fillScreen(INDIGO_DYE);
-        display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
-    }
-
-    void homeScreen()
-    {
-        m_state = view_state_t::HOME;
-        display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
-
-        for (int i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
-        {
-            if (m_active_macros[i] == nullptr) continue;
-            m_active_macros[i]->draw();
-        }
-        m_settings_menu_button.draw();
-    }
-    //////////////////// ~Main Window Rendering /////////////////////
-
-    /// @brief Set the callback for a given button
-    /// @param callback 
-    /// @param ctx 
-    /// @note This is used for testing only
-    void setCallback(buttonCallback callback, void* ctx = nullptr)
-    {
-        this->m_test_button.callback(callback, ctx);
-    }
-
     /// @brief Display a message on the screen
     /// @param message The message to display
     void displayMessage(char const *message)
     {
         display::tft->fillScreen(INDIGO_DYE);
         display::displayMessage(message);
-    }
-
-    /// @brief Render the test screen
-    /// @details This is used for testing only
-    void renderTestScreen()
-    {
-        display::tft->fillScreen(INDIGO_DYE);
-        // m_test_button.draw();
-        m_active_macros[0]->draw();
     }
 
     /// @brief Run the view
@@ -157,6 +115,54 @@ public:
             }
         };
     }
+
+    ///////////////////// Main Window Rendering /////////////////////
+public:
+    /// @brief Display the loading screen
+    void loadScreen()
+    {
+        m_state = view_state_t::LOADING;
+        display::tft->fillScreen(INDIGO_DYE);
+        display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
+        display::drawTextInCanvas(0
+            , display::tft->height() / 2
+            , display::tft->width()
+            , display::tft->height() / 2
+            , "Please wait Democratically"
+            , ARYLIDE_YELLOW
+            , RICH_BLACK
+            , 3);
+    }
+
+    /// @brief Display the home screen
+    void homeScreen()
+    {
+        m_state = view_state_t::HOME;
+        display::drawBmp("/bckgrnd.bmp"
+            , 0
+            , 0
+            , display::tft->width()
+            , display::tft->height()
+            , false
+            , display::tft->height() / 2);
+
+        for (int i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
+        {
+            if (m_active_macros[i] == nullptr) continue;
+            m_active_macros[i]->draw();
+        }
+        m_settings_menu_button.draw();
+    }
+
+    void mainMenu()
+    {
+        m_state = view_state_t::MAIN_MENU;
+        // display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
+
+        // m_test_button.draw();
+        // m_settings_menu_button.draw();
+    }
+    //////////////////// ~Main Window Rendering /////////////////////
 
     ///////////////////// Managing button creations /////////////////////
 public:
@@ -291,6 +297,27 @@ private:
                 tp.y >= button->minY() && tp.y <= button->maxY());
     }
     //////////////////// ~TOUCH HANDLERS ///////////////////// 
+
+    ////////////// TESTING FUNCTIONS /////////////////////
+public:
+    /// @brief Set the callback for a given button
+    /// @param callback 
+    /// @param ctx 
+    /// @note This is used for testing only
+    void setCallback(buttonCallback callback, void* ctx = nullptr)
+    {
+        this->m_test_button.callback(callback, ctx);
+    }
+
+    /// @brief Render the test screen
+    /// @details This is used for testing only
+    void renderTestScreen()
+    {
+        display::tft->fillScreen(INDIGO_DYE);
+        // m_test_button.draw();
+        m_active_macros[0]->draw();
+    }
+    ///////////////// ~TESTING FUNCTIONS /////////////////////
 };
 
 } // namespace view

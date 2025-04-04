@@ -54,19 +54,9 @@ public:
         String macro_file_paths[num_startup_macros];
         macro::macro_c macros[num_startup_macros];
         size_t count = m_model->loadMacros(startup_macros, num_startup_macros, macro_names, macro_file_paths, macros);
-        
         m_view->createHomeScreenMacroButtons(count, macros, macro_names, macro_file_paths);
-        
-        //////////////////////////////////////////////////////////////////////////
-        // ******************************************************************** //
-        // 2.1. What macros are needed by the view?                             //
-        // 2.2. Get X macros info from model (by id???)                         //
-        // 2.3. Create macro buttons in view                                    //
-        // ******************************************************************** //
-        //////////////////////////////////////////////////////////////////////////
 
         m_view->homeScreen();
-
         m_view->run();
     }
 
