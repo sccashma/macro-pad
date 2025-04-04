@@ -220,12 +220,70 @@ public:
             , "Back");
         
         m_menu_buttons[main_menu_load]->drawCallback(handleDrawButton, this);
-        /// TODO: set the callback for the load button
+        m_menu_buttons[main_menu_load]->callback(handleMacroSelect, this);
         m_menu_buttons[main_menu_load]->draw();
 
         m_menu_buttons[main_menu_back]->drawCallback(handleDrawButton, this);
         m_menu_buttons[main_menu_back]->callback(handleHomeScreen, this);
         m_menu_buttons[main_menu_back]->draw();
+        m_prev_state = m_state;
+    }
+
+    /// @brief Display the macro select screen
+    /// @details This screen allows the user to select a macro to place on the home screen
+    void macroSelect()
+    {
+        m_state = view_state_t::MACRO_SELECT;
+        if (m_prev_state == view_state_t::MAIN_MENU)
+        {
+            // Clear only up to the top of the menu buttons
+            display::drawBmp("/bckgrnd.bmp"
+                , 0
+                , 0
+                , display::tft->width()
+                , display::tft->height()
+                , false
+                , display::tft->height() - DEFAULT_MENU_BUTTON_HEIGHT);
+        }
+        else
+        {
+            display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
+        }
+        _deleteMenuButtons();
+
+        gui::wf_macro_select_t wf;
+
+        // scroll left button
+        m_menu_buttons[macro_select_left] = new gui::button_base_c(wf.scroll_left_button.x
+            , wf.scroll_left_button.y
+            , wf.scroll_left_button.width
+            , wf.scroll_left_button.height
+            , "<");
+        m_menu_buttons[macro_select_left]->active(false);
+        m_menu_buttons[macro_select_left]->drawCallback(handleDrawButton, this);
+        /// @todo Add callback to scroll left
+        m_menu_buttons[macro_select_left]->draw();
+
+        // scroll right button
+        m_menu_buttons[macro_select_right] = new gui::button_base_c(wf.scroll_right_button.x
+            , wf.scroll_right_button.y
+            , wf.scroll_right_button.width
+            , wf.scroll_right_button.height
+            , ">");
+        m_menu_buttons[macro_select_right]->drawCallback(handleDrawButton, this);
+        /// @todo Add callback to scroll right
+        m_menu_buttons[macro_select_right]->draw();
+
+        // done button
+        m_menu_buttons[macro_select_done_place] = new gui::button_base_c(wf.confirm_button.x
+            , wf.confirm_button.y
+            , wf.confirm_button.width
+            , wf.confirm_button.height
+            , "Done");
+        m_menu_buttons[macro_select_done_place]->drawCallback(handleDrawButton, this);
+        m_menu_buttons[macro_select_done_place]->callback(handleHomeScreen, this);
+        m_menu_buttons[macro_select_done_place]->draw();
+
         m_prev_state = m_state;
     }
     //////////////////// ~Main Window Rendering /////////////////////
@@ -313,6 +371,12 @@ public:
         if (obj) static_cast<view_c*>(obj)->homeScreen();
     }
 
+    /// @brief Handler for the macro select button
+    static void handleMacroSelect(void *obj)
+    {
+        if (obj) static_cast<view_c*>(obj)->macroSelect();
+    }
+
     /// @brief Handler for drawing standard buttons
     static void handleDrawButton(void *obj, void *button)
     {
@@ -360,6 +424,9 @@ private:
             _homeScreenTouchHandler(tp);
             break;
         case view_state_t::MAIN_MENU:
+            _menuTouchHandler(tp);
+            break;
+        case view_state_t::MACRO_SELECT:
             _menuTouchHandler(tp);
             break;
         // Add cases for other wireframes as needed

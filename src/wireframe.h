@@ -49,7 +49,7 @@ struct wf_macro_select_t
         MACRO_SELECT_SCROLL_LEFT_X, MACRO_SELECT_SCROLL_Y, DEFAULT_MENU_BUTTON_WIDTH, DEFAULT_MENU_BUTTON_HEIGHT};
     wf_element_t scroll_right_button = {
         MACRO_SELECT_SCROLL_RIGHT_X, MACRO_SELECT_SCROLL_Y, DEFAULT_MENU_BUTTON_WIDTH, DEFAULT_MENU_BUTTON_HEIGHT};
-    wf_element_t back_button = {
+    wf_element_t confirm_button = {
         MACRO_SELECT_BACK_X, MACRO_SELECT_SCROLL_Y, DEFAULT_MENU_BUTTON_WIDTH, DEFAULT_MENU_BUTTON_HEIGHT};
 };
 } // namespace gui
