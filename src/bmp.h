@@ -48,9 +48,6 @@ public:
     }
 
 private:
-    unsigned long long previousMillis = 0;
-    unsigned long long currentMillis = 0;
-
     /// @brief Draw the bitmap image to the screen
     /// @param f file pointer to the bitmap file
     /// @param u starting x coordinate
@@ -61,7 +58,6 @@ private:
     /// lines (Default: 0, which means the whole image)
     void drawbmtrue(File *f, int16_t const u, int16_t const v, uint32_t const xend, int16_t yend = 0)
     {
-        previousMillis = millis();
         if (yend == 0)
         {
             yend = bmheight;
@@ -107,9 +103,6 @@ private:
 
         // Free the allocated buffer
         free(lineBuffer);
-        currentMillis = millis();
-        Serial.print("Time taken to draw: ");
-        Serial.println(currentMillis - previousMillis);
     }
 
     uint16_t convertToRGB565(uint8_t r, uint8_t g, uint8_t b) {
