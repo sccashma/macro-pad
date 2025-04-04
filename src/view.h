@@ -147,6 +147,7 @@ public:
     }
 
     /// @brief Display the home screen
+    /// @details This is the main screen that displays the macros
     void homeScreen()
     {
         m_state = view_state_t::HOME;
@@ -198,6 +199,8 @@ public:
         m_prev_state = m_state;
     }
 
+    /// @brief Display the main menu
+    /// @details This is the main menu that allows the user to select options
     void mainMenu()
     {
         m_state = view_state_t::MAIN_MENU;
@@ -281,6 +284,8 @@ private:
         }
     }
 
+    /// @brief Delete the menu buttons
+    /// @details This is used to delete all menu buttons when they are no longer needed
     void _deleteMenuButtons()
     {
         for (size_t i = 0; i < MENU_BTN_COUNT(m_menu_buttons); i++)
@@ -296,11 +301,13 @@ private:
 
     ///////////////////// BUTTON CALLBACK HANDLERS /////////////////////
 public:
+    /// @brief Handler for the main menu button
     static void handleMainMenu(void *obj)
     {
         if (obj) static_cast<view_c*>(obj)->mainMenu();
     }
 
+    /// @brief Handler for the home screen button
     static void handleHomeScreen(void *obj)
     {
         if (obj) static_cast<view_c*>(obj)->homeScreen();
@@ -363,6 +370,7 @@ private:
 
     /// @brief Handle touch input for the home screen
     /// @param tp The touch point
+    /// @details This function checks if the touch point intersects with any of the active macro buttons
     void _homeScreenTouchHandler(TSPoint const &tp)
     {
         // Check if the touch point intersects with any active macro buttons
@@ -383,6 +391,9 @@ private:
         }
     }
 
+    /// @brief Handle touch input for the menu screen
+    /// @param tp The touch point
+    /// @details This function checks if the touch point intersects with any of the menu buttons
     void _menuTouchHandler(TSPoint const &tp)
     {
         for (size_t i = 0; i < MENU_BTN_COUNT(m_menu_buttons); i++)
