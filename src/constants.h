@@ -23,6 +23,7 @@ int constexpr RICH_BLACK         = 0x0042;
 int constexpr INDIGO_DYE         = 0x21ea;
 int constexpr UCLA_BLUE          = 0x4393;
 int constexpr ARYLIDE_YELLOW     = 0xde6a;
+int constexpr BRIGHT_YELLOW      = 0xef43;
 int constexpr BATTLESHIP_GREY    = 0x9cd3;
 int constexpr SILVER             = 0xc638;
 int constexpr ANTI_FLASH_WHITE   = 0xef7d;

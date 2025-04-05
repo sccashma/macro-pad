@@ -32,7 +32,6 @@ size_t parseCSVLine(String input, String components[], size_t const components_s
 
     size_t num_of_entries = num_of_delims + 1;
 
-
     if (num_of_delims == 0) // no delimeters
     {
         components[0] = input; // there's only 1 component
@@ -42,6 +41,8 @@ size_t parseCSVLine(String input, String components[], size_t const components_s
     size_t start_pos = 0;
     for (size_t i = 0; i < num_of_entries; i++) // for each entry
     {
+        if (i >= components_size) return read_entries; // break if the array is full
+
         size_t idx = input.indexOf(DELIMETER, start_pos);
         components[i] = input.substring(start_pos, idx);
         read_entries++; // increment number of entries read.

@@ -66,6 +66,11 @@ public:
     {
         return m_model->queryMacros(ids, names);
     }
+
+    size_t handleGetMacroOptions(size_t const qty, uint16_t *ids, String *names, uint16_t const start = 0)
+    {
+        return m_model->getMacroOptions(qty, ids, names, start);
+    }
 };
 
 } // namespace presenter

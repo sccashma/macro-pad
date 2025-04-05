@@ -19,6 +19,8 @@
 #ifndef _VIEW_H_
 #define _VIEW_H_
 
+#include "limits.h"
+
 #include "presenter_abstract.h"
 #include "view_abstract.h"
 
@@ -45,7 +47,7 @@ uint16_t constexpr startup_macros[7] = {30, 8, 43, 47, 31, 32, 37};
 /// @brief Helper macro to get the number of menu button pointers in an array
 /// @param x gui::button_base_c*: The array
 /// @return The number of menu buttons in the array
-#define MENU_BTN_COUNT(x) sizeof(m_menu_buttons) / sizeof(gui::button_base_c*)
+#define BTN_COUNT(x) sizeof(m_menu_buttons) / sizeof(gui::button_base_c*)
 
 typedef enum view_state_t
 {
@@ -59,6 +61,7 @@ typedef enum view_state_t
 } view_state_t;
 
 using buttonCallback = void (*)(void*);
+using drawButtonCallback = void (*)(void*, void*);
 
 class view_c : public view_abstract_c
 {
@@ -66,9 +69,11 @@ private:
     view_state_t m_state;
     view_state_t m_prev_state;
     gui::button_base_c m_test_button; //< test button (for testing only)
-    gui::macro_button_c *m_active_macros[MACRO_PLACE_OPTIONS];
+
+    uint16_t m_current_selected_id;
+    uint8_t m_current_selected_placement;
     
-    /// @brief Menu buttons and their indexes
+    /// @brief Buttons and their indexes
     static size_t constexpr home_settings = 0;
     static size_t constexpr main_menu_load = 1;
     static size_t constexpr main_menu_back = 2;
@@ -76,12 +81,16 @@ private:
     static size_t constexpr macro_select_right = 4;
     static size_t constexpr macro_select_done_place = 5;
     gui::button_base_c *m_menu_buttons[6];
+    gui::button_base_c *m_macro_select_options[MACRO_SELECT_OPTIONS];
+    gui::macro_button_c *m_active_macros[MACRO_PLACE_OPTIONS];
 
 public:
     /// @brief Constructor
     view_c()
     : m_state(view_state_t::NONE)
     , m_prev_state(view_state_t::NONE)
+    , m_current_selected_id(UINT_MAX)
+    , m_current_selected_placement(UCHAR_MAX)
     {
         this->m_test_button = gui::button_base_c(
             0, 0, DEFAULT_MENU_BUTTON_WIDTH, DEFAULT_MENU_BUTTON_HEIGHT, "# Macros");
@@ -92,9 +101,14 @@ public:
             m_active_macros[i] = nullptr;
         }
         
-        for (size_t i = 0; i < MENU_BTN_COUNT(m_menu_buttons); i++)
+        for (size_t i = 0; i < BTN_COUNT(m_menu_buttons); i++)
         {
             m_menu_buttons[i] = nullptr;
+        }
+
+        for (size_t i = 0; i < BTN_COUNT(m_macro_select_options); i++)
+        {
+            m_macro_select_options[i] = nullptr;
         }
     }
 
@@ -103,6 +117,7 @@ public:
     {
         _deleteActiveMacros();
         _deleteMenuButtons();
+        _deleteMacroSelectOptions();
     }
 
     /// @brief Clear the screen
@@ -274,42 +289,132 @@ public:
 
         gui::wf_macro_select_t wf;
 
-        // scroll left button
-        m_menu_buttons[macro_select_left] = new gui::button_base_c(wf.scroll_left_button.x
-            , wf.scroll_left_button.y
-            , wf.scroll_left_button.width
-            , wf.scroll_left_button.height
-            , "<");
+        _generateButton(
+            wf.scroll_left_button, m_menu_buttons, "<", nullptr, nullptr, handleDrawButton, this, macro_select_left);
+        _generateButton(
+            wf.scroll_right_button, m_menu_buttons, ">", nullptr, nullptr, handleDrawButton, this, macro_select_right);
+        _generateButton(wf.confirm_button
+            , m_menu_buttons
+            , "Done"
+            , handleHomeScreen
+            , this
+            , handleDrawButton
+            , this
+            , macro_select_done_place);
+            
+        // Get the macros to display
+        uint16_t ids[MACRO_SELECT_OPTIONS];
+        String names[MACRO_SELECT_OPTIONS];
+        size_t options = m_presenter->handleGetMacroOptions(MACRO_SELECT_OPTIONS, ids, names);
+
+        for (int i = 0; i < options; i++)
+        {
+            _generateButton(wf.macro_select_options[i]
+                , m_macro_select_options
+                , names[i].c_str()
+                , nullptr
+                , nullptr
+                , handleDrawButton
+                , this
+                , i);
+            m_macro_select_options[i]->fillColour(INDIGO_DYE);
+            m_macro_select_options[i]->textColour(ANTI_FLASH_WHITE);
+            m_macro_select_options[i]->borderColour(ANTI_FLASH_WHITE);
+            m_macro_select_options[i]->setPressedColours(UCLA_BLUE, ANTI_FLASH_WHITE, ANTI_FLASH_WHITE);
+            m_macro_select_options[i]->setDisabledColours(UCLA_BLUE, ANTI_FLASH_WHITE, ANTI_FLASH_WHITE);
+            m_macro_select_options[i]->id(ids[i]);
+        }
+        
         m_menu_buttons[macro_select_left]->active(false);
-        m_menu_buttons[macro_select_left]->drawCallback(handleDrawButton, this);
-        /// @todo Add callback to scroll left
-        m_menu_buttons[macro_select_left]->draw();
-
-        // scroll right button
-        m_menu_buttons[macro_select_right] = new gui::button_base_c(wf.scroll_right_button.x
-            , wf.scroll_right_button.y
-            , wf.scroll_right_button.width
-            , wf.scroll_right_button.height
-            , ">");
-        m_menu_buttons[macro_select_right]->drawCallback(handleDrawButton, this);
-        /// @todo Add callback to scroll right
-        m_menu_buttons[macro_select_right]->draw();
-
-        // done button
-        m_menu_buttons[macro_select_done_place] = new gui::button_base_c(wf.confirm_button.x
-            , wf.confirm_button.y
-            , wf.confirm_button.width
-            , wf.confirm_button.height
-            , "Done");
-        m_menu_buttons[macro_select_done_place]->drawCallback(handleDrawButton, this);
-        m_menu_buttons[macro_select_done_place]->callback(handleHomeScreen, this);
-        m_menu_buttons[macro_select_done_place]->draw();
-
+        {
+            _drawButton(m_macro_select_options, MACRO_SELECT_OPTIONS);
+        }
+        {
+            size_t draw_ids[] = {macro_select_left, macro_select_right, macro_select_done_place};
+            _drawButton(m_menu_buttons, draw_ids, 3);
+        }
         m_prev_state = m_state;
     }
     //////////////////// ~Main Window Rendering /////////////////////
 
     ///////////////////// Managing button creations /////////////////////
+private:
+    /// @brief Draw a set of buttons
+    /// @param button_array Array of buttons to draw
+    /// @param count Number of buttons to draw, starting from the beginning of the array
+    /// @note This function will draw the buttons in the order specified
+    void _drawButton(gui::button_base_c **button_array, size_t const count)
+    {
+        for (size_t i = 0; i < count; i++)
+        {
+            if (button_array[i] != nullptr) button_array[i]->draw();
+        }
+    }
+
+    /// @brief Draw a set of buttons
+    /// @param button_array Array of buttons to draw
+    /// @param idx List of button_array indices to draw
+    /// @param count Number of buttons to draw
+    /// @note This function will draw the buttons in the order specified
+    void _drawButton(gui::button_base_c **button_array, size_t const *idx, size_t const count)
+    {
+        for (size_t i = 0; i < count; i++)
+        {
+            if (button_array[idx[i]] != nullptr) button_array[idx[i]]->draw();
+        }
+    }
+
+    /// @brief Generate buttons
+    /// @param element wireframe object specifying the buttons' layout
+    /// @param button_array array of buttons to store the buttons in
+    /// @param text Text to display on the button
+    /// @param callback The function to be called when the button is pressed
+    /// @param callback_ctx The context in which to invoke the action function
+    /// @param draw_callback The function to draw the button
+    /// @param draw_callback_ctx The context in which to invoke the draw function
+    /// @param idx (optional) Specify the index of the array in which to create the button
+    /// @note This function will create buttons for the macros in the first available slots
+    void _generateButton(
+        gui::wf_element_t const &element, 
+        gui::button_base_c **button_array, 
+        char const * text,
+        buttonCallback callback,
+        void * callback_ctx,
+        drawButtonCallback draw_callback,
+        void * draw_callback_ctx,
+        int const idx = -1
+    )
+    {
+        if (idx >= 0)
+        {
+            if (button_array[idx] != nullptr) delete button_array[idx]; // delete the old button
+
+            button_array[idx] = new gui::button_base_c(element.x
+                , element.y
+                , element.width
+                , element.height
+                , text);
+            button_array[idx]->callback(callback, callback_ctx);
+            button_array[idx]->drawCallback(draw_callback, draw_callback_ctx);
+            return;
+        }
+        
+        // Find the first available slot
+        for (size_t i = 0; i < BTN_COUNT(button_array); i++)
+        {
+            if (button_array[i] != nullptr) continue;
+
+            button_array[i] = new gui::button_base_c(element.x
+                , element.y
+                , element.width
+                , element.height
+                , text);
+            button_array[i]->callback(callback, callback_ctx);
+            button_array[i]->drawCallback(draw_callback, draw_callback_ctx);
+            break;
+        }
+    }
+
 public:
     /// @brief Create a set of macro buttons for the home screen
     /// @param num_macros The number of macros being passed to the function
@@ -367,12 +472,26 @@ private:
     /// @details This is used to delete all menu buttons when they are no longer needed
     void _deleteMenuButtons()
     {
-        for (size_t i = 0; i < MENU_BTN_COUNT(m_menu_buttons); i++)
+        for (size_t i = 0; i < BTN_COUNT(m_menu_buttons); i++)
         {
             if (m_menu_buttons[i] != nullptr)
             {
                 delete m_menu_buttons[i];
                 m_menu_buttons[i] = nullptr;
+            }
+        }
+    }
+
+    /// @brief Delete the macro select options
+    /// @details This is used to delete all macro select options when they are no longer needed
+    void _deleteMacroSelectOptions()
+    {
+        for (size_t i = 0; i < BTN_COUNT(m_macro_select_options); i++)
+        {
+            if (m_macro_select_options[i] != nullptr)
+            {
+                delete m_macro_select_options[i];
+                m_macro_select_options[i] = nullptr;
             }
         }
     }
@@ -409,6 +528,7 @@ public:
     {
         if (obj) static_cast<view_c*>(obj)->_drawButtonBmp(*static_cast<gui::button_base_c*>(button));
     }
+    
 private:
     /// @brief Draw a button
     /// @param button The button to draw
@@ -448,7 +568,7 @@ private:
             _menuTouchHandler(tp);
             break;
         case view_state_t::MACRO_SELECT:
-            _menuTouchHandler(tp);
+            _macroSelectTouchHandler(tp);
             break;
         // Add cases for other wireframes as needed
         default:
@@ -458,8 +578,9 @@ private:
 
     /// @brief Handle touch input for the home screen
     /// @param tp The touch point
+    /// @return True if a button was pressed, false otherwise
     /// @details This function checks if the touch point intersects with any of the active macro buttons
-    void _homeScreenTouchHandler(TSPoint const &tp)
+    bool _homeScreenTouchHandler(TSPoint const &tp)
     {
         // Check if the touch point intersects with any active macro buttons
         for (size_t i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
@@ -468,31 +589,71 @@ private:
 
             if (_isPointInsideButton(tp, m_active_macros[i]))
             {
-                if (m_active_macros[i]->press()) return;
+                if (m_active_macros[i]->press())
+                {
+                    return true;
+                }
             }
         }
 
         // Check if the touch point intersects with the settings menu button
         if (_isPointInsideButton(tp, m_menu_buttons[home_settings]))
         {
-            m_menu_buttons[home_settings]->press();
+            if (m_menu_buttons[home_settings]->press()) return true;
         }
+        return false;
     }
 
     /// @brief Handle touch input for the menu screen
     /// @param tp The touch point
+    /// @return True if a button was pressed, false otherwise
     /// @details This function checks if the touch point intersects with any of the menu buttons
-    void _menuTouchHandler(TSPoint const &tp)
+    bool _menuTouchHandler(TSPoint const &tp)
     {
-        for (size_t i = 0; i < MENU_BTN_COUNT(m_menu_buttons); i++)
+        for (size_t i = 0; i < BTN_COUNT(m_menu_buttons); i++)
         {
             if (m_menu_buttons[i] == nullptr) continue;
 
             if (_isPointInsideButton(tp, m_menu_buttons[i]))
             {
-                if (m_menu_buttons[i]->press()) return;
+                m_menu_buttons[i]->press();
+                return true;
             }
         }
+        return false;
+    }
+
+    /// @brief Handle touch input for the macro select screen
+    /// @param tp The touch point
+    /// @return True if a button was pressed, false otherwise
+    bool _macroSelectTouchHandler(TSPoint const &tp)
+    {
+        if (_menuTouchHandler(tp)) return true; /// Handle the menu buttons first
+
+        bool ret = false;
+        for (size_t i = 0; i < BTN_COUNT(m_macro_select_options); i++)
+        {
+            if (m_macro_select_options[i] == nullptr) continue;
+
+            if (_isPointInsideButton(tp, m_macro_select_options[i]))
+            {
+                // Use the disabled button colours to indicate the currently selected option
+                bool button_state = m_macro_select_options[i]->active();
+                m_macro_select_options[i]->active(!button_state); // toggle the active state
+                
+                if (!button_state) m_current_selected_id = UINT_MAX; // reset the selected id
+                if (button_state) m_current_selected_id = m_macro_select_options[i]->id(); // else get the selected id
+                
+                m_macro_select_options[i]->draw();
+                ret = true;
+            }
+            else if (!m_macro_select_options[i]->active())
+            {
+                m_macro_select_options[i]->active(true);
+                m_macro_select_options[i]->draw();
+            }
+        }
+        return ret;
     }
 
     /// @brief Check if a touch point is inside a button
@@ -502,7 +663,7 @@ private:
     bool _isPointInsideButton(TSPoint const &tp, gui::button_base_c const *button)
     {
         return (tp.x >= button->minX() && tp.x <= button->maxX() &&
-                tp.y >= button->minY() && tp.y <= button->maxY());
+                tp.y >= button->minY() && tp.y < button->maxY());
     }
     //////////////////// ~TOUCH HANDLERS ///////////////////// 
 
@@ -529,6 +690,8 @@ public:
 
     ///////////////////// PRESENTER CALLBACK HANDLERS /////////////////////
 public:
+    /// @brief Set the pointer to the presenter
+    /// @param presenter The pointer to the presenter
     void setPresenter(presenter::presenter_abstract_c *presenter)
     {
         m_presenter = presenter;
@@ -537,6 +700,9 @@ public:
 private:
     presenter::presenter_abstract_c *m_presenter;
 
+    /// @brief Query the presenter for all available macros
+    /// @return ids: The ids of the available macros
+    /// @return names: The names of the available macros
     size_t _queryAllMacros(uint16_t *ids, String *names)
     {
         size_t size = m_presenter->handleQueryMacros(ids, names);

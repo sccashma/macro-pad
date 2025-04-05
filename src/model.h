@@ -18,6 +18,8 @@
 
 #include "sd_utils.h"
 #include "macro.h"
+#include "hashtable.h"
+#include "limits.h"
 
 namespace model
 {
@@ -29,6 +31,7 @@ public:
     model_c()
     {
         m_macro_count = _availableMacros();
+        _initialiseTables();
     }
 
     ~model_c() = default;
@@ -50,7 +53,7 @@ public:
     /// @note This function will load the macros from the SD card and store them in the provided arrays
     size_t loadMacros(uint16_t const *ids, size_t const size, String *names, String *file_paths, macro::macro_c *macros)
     {
-        return _loadMacros(ids, size, names, file_paths, macros);
+        return _readMacros(ids, size, names, file_paths, macros);
     }
 
     size_t queryMacros(uint16_t *ids, String *names)
@@ -58,8 +61,45 @@ public:
         return _queryMacros(ids, names);
     }
 
+    size_t getMacroOptions(size_t const qty, uint16_t *ids, String *names, uint16_t const start = 0)
+    {
+        return _getMacroOptions(qty, ids, names, start);
+    }
+
 private:
     int m_macro_count; ///< The number of macros in the macro file
+    Hashtable<int, String> m_macro_names; ///< The macro name table
+    Hashtable<int, macro::macro_c> m_macro_codes; ///< The macro code table
+
+    void _initialiseTables()
+    {
+        uint16_t ids[m_macro_count];
+        String names[m_macro_count];
+        macro::macro_c codes[m_macro_count]; 
+        String ignore[m_macro_count]; // ignore the file paths
+        int query_count = _queryMacros(ids, names);
+        int read_count = _readMacros(ids, m_macro_count, names, ignore, codes);
+        
+        if (!m_macro_names.isEmpty())
+        {
+            m_macro_names.clear();
+        }
+    
+        if (!m_macro_codes.isEmpty())
+        {
+            m_macro_codes.clear();
+        }
+
+        for (size_t i = 0; i < m_macro_count; i++)
+        {
+            m_macro_names.put(ids[i], names[i]);
+        }
+
+        for (size_t i = 0; i < m_macro_count; i++)
+        {
+            m_macro_codes.put(ids[i], codes[i]);
+        }
+    }   
 
     /// @brief Count the number of macros in the macro file
     /// @return int16_t: The number of macros
@@ -85,8 +125,14 @@ private:
         return count;
     }
 
-    /// @brief load the macro's in the active_macro's array
-    size_t _loadMacros(uint16_t const *ids, size_t const size, String *names, String *file_paths, macro::macro_c *macros)
+    /// @brief fetch macro's by id
+    size_t _readMacros(
+        uint16_t const *ids, 
+        size_t const size, 
+        String *names, 
+        String *file_paths, 
+        macro::macro_c *macros
+    )
     {   
         size_t count = 0; // count how many macros are loaded
         File file = SD.open("macros.csv");
@@ -131,33 +177,57 @@ private:
         return count; // return the number of macros loaded
     }
 
-        /// @brief load the macro's in the active_macro's array
-        size_t _queryMacros(uint16_t *ids, String *names)
-        {   
-            size_t count = 0; // count how many macros are loaded
-            File file = SD.open("macros.csv");
-            
-            while(!file)
-            {
-                delay(500);
-                file = SD.open("macros.csv"); // try again
-            }
-            
-            sd::readLine(&file); // read header
-            
-            size_t idx = 0; // index for the data arrays
-            while(file.available())
-            {
-                String line = sd::readLine(&file);
-                String entries[64];
-                csv::parseCSVLine(line, entries, 64);
-                ids[idx] = static_cast<uint16_t>(entries[0].toInt());
-                names[idx] = entries[2];
-            }
-            file.close();
-    
-            return count; // return the number of macros loaded
+    /// @brief Query the ids and names of all macros in the file
+    size_t _queryMacros(uint16_t *ids, String *names)
+    {   
+        size_t count = 0; // count how many macros are loaded
+        File file = SD.open("macros.csv");
+        
+        while(!file)
+        {
+            delay(500);
+            file = SD.open("macros.csv"); // try again
         }
+        
+        sd::readLine(&file); // read header
+        
+        size_t idx = 0; // index for the data arrays
+        while(file.available())
+        {
+            String line = sd::readLine(&file);
+            String entries[64];
+            csv::parseCSVLine(line, entries, 64);
+            ids[idx] = static_cast<uint16_t>(entries[0].toInt());
+            names[idx] = entries[2];
+            idx++;
+            count++;
+        }
+        file.close();
+
+        return count; // return the number of macros loaded
+    }
+
+    size_t _getMacroOptions(size_t const qty, uint16_t *ids, String *names, uint16_t const start = 0)
+    {
+        size_t count = 0;
+
+        uint16_t id = start;
+
+        for (size_t i = 0; i < qty; i++)
+        {
+            while (!m_macro_names.exists(id))
+            {
+                id++; // increment the id
+                if (id == UINT_MAX) return count; // we've checked every possible id
+            }
+
+            ids[i] = id;
+            names[i] = m_macro_names.getElement(id);
+            count++;
+            id++;
+        }
+        return count;
+    }
 };
 
 } // namespace model

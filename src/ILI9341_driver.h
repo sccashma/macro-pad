@@ -213,7 +213,7 @@ void drawButton(
     if (text != "")
     {   
         uint8_t scaled_font_size = text_size;
-        if (text_size == 0) scaled_font_size = calculateTextSize(y_);
+        if (text_size == 0) scaled_font_size = calculateTextSize(y_) + 1;
         tft->setTextSize(scaled_font_size);
         drawTextInCanvas(x, y, x_, y_, text.c_str(), text_colour, scaled_font_size);
     }

@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "constants.h"
+#include "limits.h"
 
 namespace gui
 {
@@ -35,7 +36,9 @@ public:
     /// @param width The width of the button in pixels
     /// @param height The height of the button in pixels
     button_base_c(int16_t x = 0, int16_t y = 0, int16_t width = 0, int16_t height = 0, const char* name = "")
-    : m_active(true)
+    : m_id(UINT_MAX)
+    , m_active(true)
+    , m_pressed(false)
     , m_x(x)
     , m_y(y)
     , m_width(width)
@@ -47,13 +50,21 @@ public:
     , m_fill_colour(DEFAULT_FILL_COLOUR)
     , m_txt_colour(DEFAULT_TEXT_COLOUR)
     , m_border_colour(DEFAULT_BORDER_COLOUR)
+    , m_fill_colour_pressed(DEFAULT_FILL_COLOUR_PRESSED)
+    , m_txt_colour_pressed(DEFAULT_TEXT_COLOUR_PRESSED)
+    , m_border_colour_pressed(DEFAULT_BORDER_COLOUR_PRESSED)
+    , m_fill_colour_disabled(DEFAULT_FILL_COLOUR_DISABLED)
+    , m_txt_colour_disabled(DEFAULT_TEXT_COLOUR_DISABLED)
+    , m_border_colour_disabled(DEFAULT_BORDER_COLOUR_DISABLED)
     {
     }
 
     /// @brief copy constructor for the button_base_c class
     /// @param rhs The button to copy
     button_base_c(button_base_c const& rhs)
-    : m_active(rhs.m_active)
+    : m_id(rhs.m_id)
+    , m_active(rhs.m_active)
+    , m_pressed(rhs.m_pressed)
     , m_x(rhs.m_x)
     , m_y(rhs.m_y)
     , m_width(rhs.m_width)
@@ -65,6 +76,12 @@ public:
     , m_fill_colour(rhs.m_fill_colour)
     , m_txt_colour(rhs.m_txt_colour)
     , m_border_colour(rhs.m_border_colour)
+    , m_fill_colour_pressed(rhs.m_fill_colour_pressed)
+    , m_txt_colour_pressed(rhs.m_txt_colour_pressed)
+    , m_border_colour_pressed(rhs.m_border_colour_pressed)
+    , m_fill_colour_disabled(rhs.m_fill_colour_disabled)
+    , m_txt_colour_disabled(rhs.m_txt_colour_disabled)
+    , m_border_colour_disabled(rhs.m_border_colour_disabled)
     {
     }
 
@@ -75,7 +92,9 @@ public:
     {
         if (this != &rhs)
         {
+            this->m_id = rhs.m_id;
             this->m_active = rhs.m_active;
+            this->m_pressed = rhs.m_pressed;
             this->m_x = rhs.m_x;
             this->m_y = rhs.m_y;
             this->m_width = rhs.m_width;
@@ -87,6 +106,12 @@ public:
             this->m_fill_colour = rhs.m_fill_colour;
             this->m_txt_colour = rhs.m_txt_colour;
             this->m_border_colour = rhs.m_border_colour;
+            this->m_fill_colour_pressed = rhs.m_fill_colour_pressed;
+            this->m_txt_colour_pressed = rhs.m_txt_colour_pressed;
+            this->m_border_colour_pressed = rhs.m_border_colour_pressed;
+            this->m_fill_colour_disabled = rhs.m_fill_colour_disabled;
+            this->m_txt_colour_disabled = rhs.m_txt_colour_disabled;
+            this->m_border_colour_disabled = rhs.m_border_colour_disabled;
         }
         return *this;
     }
@@ -116,8 +141,11 @@ public:
         bool ret = false;
         if (m_callback_function && m_active)
         {
+            m_pressed = true;
+            draw();
             ret = true;
             m_callback_function(m_callback_context);
+            m_pressed = false;
         }
         return ret;
     }
@@ -139,6 +167,14 @@ public:
             m_draw_function(m_draw_context, this);
         }
     }
+
+    /// @brief Set the id of the button
+    /// @param id The id of the button
+    void id(int16_t id) { this->m_id = id; }
+
+    /// @brief Get the id of the button
+    /// @return int16_t: The id of the button
+    uint16_t id() const { return this->m_id; }
     
     /// @brief Set the active state of the button
     /// @param active The active state of the button
@@ -222,7 +258,12 @@ public:
     /// @brief Get the fill colour of the button
     /// @return int: The fill colour of the button in RGB565 format
     /// @note This is the background colour of the button
-    int fillColour() const { return this->m_fill_colour; }
+    int fillColour() const
+    {
+        if (this->m_pressed) return this->m_fill_colour_pressed;
+        if (!this->m_active) return this->m_fill_colour_disabled;
+        return this->m_fill_colour;
+    }
 
     /// @brief Set the text colour of the button
     /// @param colour The text colour of the button in RGB565 format
@@ -232,7 +273,12 @@ public:
     /// @brief Get the text colour of the button
     /// @return int: The text colour of the button in RGB565 format
     /// @note This is the colour of the text displayed on the button
-    int textColour() const { return this->m_txt_colour; }
+    int textColour() const 
+    { 
+        if (this->m_pressed) return this->m_txt_colour_pressed;
+        if (!this->m_active) return this->m_txt_colour_disabled;
+        return this->m_txt_colour; 
+    }
 
     /// @brief Set the border colour of the button
     /// @param colour The border colour of the button in RGB565 format
@@ -242,14 +288,51 @@ public:
     /// @brief Get the border colour of the button
     /// @return int: The border colour of the button in RGB565 format
     /// @note This is the colour of the button's border
-    int borderColour() const { return this->m_border_colour; }
+    int borderColour() const 
+    { 
+        if (this->m_pressed) return this->m_border_colour_pressed;
+        if (!this->m_active) return this->m_border_colour_disabled;
+        return this->m_border_colour; 
+    }
+
+    /// @brief Set the colours for when the button is pressed
+    /// @param fill The fill colour
+    /// @param txt The text colour
+    /// @param border The border colour
+    /// @note This sets the colours for when the button is pressed, colours are in RGB565 format
+    void setPressedColours(int fill, int txt, int border)
+    {
+        this->m_fill_colour_pressed = fill;
+        this->m_txt_colour_pressed = txt;
+        this->m_border_colour_pressed = border;
+    }
+
+    /// @brief Set the colours for when the button is disabled
+    /// @param fill The fill colour
+    /// @param txt The text colour
+    /// @param border The border colour
+    /// @note This sets the colours for when the button is disabled, colours are in RGB565 format
+    void setDisabledColours(int fill, int txt, int border)
+    {
+        this->m_fill_colour_disabled = fill;
+        this->m_txt_colour_disabled = txt;
+        this->m_border_colour_disabled = border;
+    }
 
 private:
     static constexpr int DEFAULT_FILL_COLOUR = ARYLIDE_YELLOW;
     static constexpr int DEFAULT_TEXT_COLOUR = RICH_BLACK;
     static constexpr int DEFAULT_BORDER_COLOUR = RICH_BLACK;
+    static constexpr int DEFAULT_FILL_COLOUR_PRESSED = BRIGHT_YELLOW;
+    static constexpr int DEFAULT_TEXT_COLOUR_PRESSED = RICH_BLACK;
+    static constexpr int DEFAULT_BORDER_COLOUR_PRESSED = RICH_BLACK;
+    static constexpr int DEFAULT_FILL_COLOUR_DISABLED = BATTLESHIP_GREY;
+    static constexpr int DEFAULT_TEXT_COLOUR_DISABLED = SILVER;
+    static constexpr int DEFAULT_BORDER_COLOUR_DISABLED = SILVER;
 
+    uint16_t m_id;
     bool m_active;
+    bool m_pressed;
     int m_fill_colour;
     int m_txt_colour;
     int m_border_colour;
@@ -259,6 +342,13 @@ private:
     int16_t m_height;
     String m_image_file;
     String m_name;
+
+    int m_fill_colour_pressed;
+    int m_txt_colour_pressed;
+    int m_border_colour_pressed;
+    int m_fill_colour_disabled;
+    int m_txt_colour_disabled;
+    int m_border_colour_disabled;
 };
 
 } // namespace gui
