@@ -92,9 +92,11 @@ struct KeyHash<double> {
 };
 template <typename K, typename V, typename Hash = KeyHash<K>>
 class Hashtable {
+    static float constexpr LOAD_FACTOR_THRESHOLD = 0.9;
+    static float constexpr GROWTH_FACTOR = 1.1;
 private:
     /**
-     * @brief A struct representing a key-value pair
+     * @brief 
      * @details This struct represents a key-value pair in the hash table.
      * 
      * @note This struct is private because it is only used internally.
@@ -114,7 +116,7 @@ private:
     Entry** table; // The table itself
     int TABLE_SIZE; // The current size of the table
     int count;  // The number of elements in the table
-    float loadFactorThreshold = 0.7; // The load factor threshold for resizing
+    float loadFactorThreshold = LOAD_FACTOR_THRESHOLD; // The load factor threshold for resizing
     Hash hashFunction; // The hash function to use
         
 // Simplified hash function that delegates to the Hash functor
@@ -429,7 +431,7 @@ public:
         table[index] = newEntry;
         ++count;
         if (static_cast<float>(count) / TABLE_SIZE > loadFactorThreshold) {
-            if (!resize(TABLE_SIZE * 2)) {
+            if (!resize(TABLE_SIZE * GROWTH_FACTOR)) {
                 // Handle the error as necessary, such as by not adding the new element
                 return;
             }
@@ -636,7 +638,7 @@ public:
     bool checkLoadFactorAndRehash() {
         bool success = false;
         if (loadFactor() >= loadFactorThreshold) {
-            success = resize(TABLE_SIZE * 2);
+            success = resize(TABLE_SIZE * GROWTH_FACTOR);
         }
         return success;
     }
@@ -894,6 +896,11 @@ public:
             auto kv = *it;
             ++it;
         }
+    }
+
+    unsigned long bytes() const
+    {
+        return sizeof(Entry) * TABLE_SIZE;
     }
 };
 
