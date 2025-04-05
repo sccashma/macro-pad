@@ -19,6 +19,9 @@
 #ifndef _VIEW_H_
 #define _VIEW_H_
 
+#include "presenter_abstract.h"
+#include "view_abstract.h"
+
 #include "button.h"
 #include "constants.h"
 #include "ILI9341_driver.h"
@@ -26,8 +29,13 @@
 #include "tft_touch.h"
 #include "wireframe.h"
 
+
 namespace view
 {
+
+/// Store the current macro's
+/// TODO: Store this to eeprom/SD and load it on startup.
+uint16_t constexpr startup_macros[7] = {30, 8, 43, 47, 31, 32, 37};
 
 /// @brief Helper macro to get the number of macro button pointers in an array
 /// @param x gui::macro_button_c*: The array
@@ -52,7 +60,7 @@ typedef enum view_state_t
 
 using buttonCallback = void (*)(void*);
 
-class view_c
+class view_c : public view_abstract_c
 {
 private:
     view_state_t m_state;
@@ -117,6 +125,19 @@ public:
     /// @details This is the main loop to monitor for input
     void run()
     {
+        loadScreen();
+
+        size_t num_startup_macros = MACRO_PLACE_OPTIONS;
+        String macro_names[num_startup_macros];
+        String macro_file_paths[num_startup_macros];
+        macro::macro_c macros[num_startup_macros];
+
+        size_t count = m_presenter->handleLoadMacros(
+            startup_macros, num_startup_macros, macro_names, macro_file_paths, macros);
+        
+        createHomeScreenMacroButtons(count, macros, macro_names, macro_file_paths);
+        homeScreen();
+
         for (;;)
         {
             TSPoint tp;
@@ -505,6 +526,25 @@ public:
         m_active_macros[0]->draw();
     }
     ///////////////// ~TESTING FUNCTIONS /////////////////////
+
+    ///////////////////// PRESENTER CALLBACK HANDLERS /////////////////////
+public:
+    void setPresenter(presenter::presenter_abstract_c *presenter)
+    {
+        m_presenter = presenter;
+    }
+
+private:
+    presenter::presenter_abstract_c *m_presenter;
+
+    size_t _queryAllMacros(uint16_t *ids, String *names)
+    {
+        size_t size = m_presenter->handleQueryMacros(ids, names);
+        return size;
+    }
+
+    //////////////////// ~PRESENTER CALLBACK HANDLERS /////////////////////
+
 };
 
 } // namespace view

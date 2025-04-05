@@ -53,6 +53,11 @@ public:
         return _loadMacros(ids, size, names, file_paths, macros);
     }
 
+    size_t queryMacros(uint16_t *ids, String *names)
+    {
+        return _queryMacros(ids, names);
+    }
+
 private:
     int m_macro_count; ///< The number of macros in the macro file
 
@@ -125,6 +130,34 @@ private:
 
         return count; // return the number of macros loaded
     }
+
+        /// @brief load the macro's in the active_macro's array
+        size_t _queryMacros(uint16_t *ids, String *names)
+        {   
+            size_t count = 0; // count how many macros are loaded
+            File file = SD.open("macros.csv");
+            
+            while(!file)
+            {
+                delay(500);
+                file = SD.open("macros.csv"); // try again
+            }
+            
+            sd::readLine(&file); // read header
+            
+            size_t idx = 0; // index for the data arrays
+            while(file.available())
+            {
+                String line = sd::readLine(&file);
+                String entries[64];
+                csv::parseCSVLine(line, entries, 64);
+                ids[idx] = static_cast<uint16_t>(entries[0].toInt());
+                names[idx] = entries[2];
+            }
+            file.close();
+    
+            return count; // return the number of macros loaded
+        }
 };
 
 } // namespace model

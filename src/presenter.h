@@ -17,66 +17,54 @@
 #ifndef _PRESENTER_H_
 #define _PRESENTER_H_
 
+#include "presenter_abstract.h"
+#include "view_abstract.h"
+
+#include "macro.h"
 #include "model.h"
 #include "view.h"
-
-/// tmp ///
-#include "macro.h"
-///~tmp ///
 
 namespace presenter
 {
 
-/// Store the current macro's
-/// TODO: Store this to eeprom/SD and load it on startup.
-uint16_t constexpr startup_macros[7] = {30, 8, 43, 47, 31, 32, 37};
-
-class presenter_c
+class presenter_c : public presenter_abstract_c
 {
+private:
+    model::model_c *m_model;
+    view::view_abstract_c *m_view;
+
 public:
     /// @brief Constructor
     /// @param model
     /// @param view
-    presenter_c(model::model_c *model, view::view_c *view)
+    presenter_c(model::model_c *model, view::view_abstract_c *view)
     {
         m_model = model;
         m_view = view;
+        m_view->setPresenter(this);
     }
 
     /// @brief Run the application
     /// @details This invokes the main loop for the application
     void run()
     {
-        m_view->loadScreen();
-
-        size_t num_startup_macros = MACRO_PLACE_OPTIONS;
-        String macro_names[num_startup_macros];
-        String macro_file_paths[num_startup_macros];
-        macro::macro_c macros[num_startup_macros];
-        size_t count = m_model->loadMacros(startup_macros, num_startup_macros, macro_names, macro_file_paths, macros);
-        m_view->createHomeScreenMacroButtons(count, macros, macro_names, macro_file_paths);
-
-        m_view->homeScreen();
         m_view->run();
     }
 
-    /// @brief Handler to get the number of available macros
-    /// @note: only used for testing purposes
-    static void handleAvailableMacros(void *obj)
+    size_t handleLoadMacros(
+        uint16_t const *ids, 
+        size_t const size, 
+        String *names, 
+        String *file_paths, 
+        macro::macro_c *macros
+    )
     {
-        if (obj) static_cast<presenter_c*>(obj)->_availableMacros();
+        return m_model->loadMacros(ids, size, names, file_paths, macros);
     }
-    
-private:
-    model::model_c *m_model;
-    view::view_c *m_view;
-    
-    /// @brief Get the number of available macros
-    void _availableMacros()
+
+    size_t handleQueryMacros(uint16_t *ids, String *names)
     {
-        uint16_t count = m_model->availableMacros();
-        String message = String("Available Macros: ") + count;
-        m_view->displayMessage(message.c_str());
+        return m_model->queryMacros(ids, names);
     }
 };
 
