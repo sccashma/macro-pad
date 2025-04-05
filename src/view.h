@@ -72,6 +72,7 @@ private:
 
     uint16_t m_current_selected_id;
     uint8_t m_current_selected_placement;
+    int m_scroll;
     
     /// @brief Buttons and their indexes
     static size_t constexpr home_settings = 0;
@@ -89,8 +90,9 @@ public:
     view_c()
     : m_state(view_state_t::NONE)
     , m_prev_state(view_state_t::NONE)
-    , m_current_selected_id(UINT_MAX)
+    , m_current_selected_id(USHRT_MAX)
     , m_current_selected_placement(UCHAR_MAX)
+    , m_scroll(0)
     {
         this->m_test_button = gui::button_base_c(
             0, 0, DEFAULT_MENU_BUTTON_WIDTH, DEFAULT_MENU_BUTTON_HEIGHT, "# Macros");
@@ -286,26 +288,68 @@ public:
             display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft->width(), display::tft->height());
         }
         _deleteMenuButtons();
-
+        _deleteMacroSelectOptions();
         gui::wf_macro_select_t wf;
 
-        _generateButton(
-            wf.scroll_left_button, m_menu_buttons, "<", nullptr, nullptr, handleDrawButton, this, macro_select_left);
-        _generateButton(
-            wf.scroll_right_button, m_menu_buttons, ">", nullptr, nullptr, handleDrawButton, this, macro_select_right);
-        _generateButton(wf.confirm_button
+        _createMacroSelectMenuButton();
+
+        _generateButton(wf.scroll_left_button
             , m_menu_buttons
-            , "Done"
-            , handleHomeScreen
+            , "<"
+            , handleScrollUp
             , this
             , handleDrawButton
             , this
-            , macro_select_done_place);
+            , macro_select_left);
+        _generateButton(wf.scroll_right_button
+            , m_menu_buttons
+            , ">"
+            , handleScrollDown
+            , this
+            , handleDrawButton
+            , this
+            , macro_select_right);
             
+        static uint16_t min_option = 0, max_option = 0;
+        int16_t num_macros = m_presenter->handleGetMacroCount();
+        
         // Get the macros to display
         uint16_t ids[MACRO_SELECT_OPTIONS];
         String names[MACRO_SELECT_OPTIONS];
-        size_t options = m_presenter->handleGetMacroOptions(MACRO_SELECT_OPTIONS, ids, names);
+
+        uint16_t start_search_id = 0;
+
+        if (m_scroll > 0)
+        {
+            // scroll right/down
+            start_search_id = max_option + 1;
+        }
+        else if (m_scroll < 0)
+        {
+            // scroll left/up
+            start_search_id = min_option - MACRO_SELECT_OPTIONS;
+        }
+        size_t options = m_presenter->handleGetMacroOptions(MACRO_SELECT_OPTIONS, ids, names, start_search_id);
+        min_option = ids[0];
+        max_option = ids[options - 1];
+        
+        // figure out what scrolling is needed
+        bool enable_scroll = options < num_macros; /// No need to scroll
+        bool enable_scroll_left = true;
+        bool enable_scroll_right = true;
+        
+        uint16_t min, max;
+        m_presenter->handleMinMaxID(&min, &max);
+        if (enable_scroll)
+        {
+            // if the min id is in the list, disable the scroll left button
+            // if the max id is in the list, disable the scroll right button
+            for (int i = 0; i < options; i++)
+            {
+                if (ids[i] == min) enable_scroll_left = false;
+                if (ids[i] == max) enable_scroll_right = false;
+            }
+        }
 
         for (int i = 0; i < options; i++)
         {
@@ -323,16 +367,25 @@ public:
             m_macro_select_options[i]->setPressedColours(UCLA_BLUE, ANTI_FLASH_WHITE, ANTI_FLASH_WHITE);
             m_macro_select_options[i]->setDisabledColours(UCLA_BLUE, ANTI_FLASH_WHITE, ANTI_FLASH_WHITE);
             m_macro_select_options[i]->id(ids[i]);
+
+            // Persist the currently selected macro visually
+            bool active = true;
+            if (m_current_selected_id == ids[i]) active = false;
+            m_macro_select_options[i]->active(active);
         }
         
-        m_menu_buttons[macro_select_left]->active(false);
+        if (!enable_scroll_left)
         {
-            _drawButton(m_macro_select_options, MACRO_SELECT_OPTIONS);
+            m_menu_buttons[macro_select_left]->active(false);
         }
+        if (!enable_scroll_right)
         {
-            size_t draw_ids[] = {macro_select_left, macro_select_right, macro_select_done_place};
-            _drawButton(m_menu_buttons, draw_ids, 3);
+            m_menu_buttons[macro_select_right]->active(false);
         }
+        
+        size_t draw_ids[] = {macro_select_left, macro_select_right, macro_select_done_place};
+        _drawButton(m_macro_select_options, MACRO_SELECT_OPTIONS);
+        _drawButton(m_menu_buttons, draw_ids, 3);
         m_prev_state = m_state;
     }
     //////////////////// ~Main Window Rendering /////////////////////
@@ -454,6 +507,33 @@ private:
         }
     }
 
+    void _createMacroSelectMenuButton()
+    {
+        gui::wf_macro_select_t wf;
+        if (m_current_selected_id == USHRT_MAX) // If no macro is selected
+        {
+            _generateButton(wf.confirm_button
+                , m_menu_buttons
+                , "Done"
+                , handleHomeScreen
+                , this
+                , handleDrawButton
+                , this
+                , macro_select_done_place);
+        }
+        else
+        {
+            _generateButton(wf.confirm_button
+                , m_menu_buttons
+                , "Place"
+                , nullptr
+                , nullptr
+                , handleDrawButton
+                , this
+                , macro_select_done_place);
+        }
+    }
+
     /// @brief Delete the active macros
     /// @details This is used to delete all active macros when they are no longer needed
     void _deleteActiveMacros()
@@ -517,6 +597,18 @@ public:
         if (obj) static_cast<view_c*>(obj)->macroSelect();
     }
 
+    /// @brief Handler for scrolling up
+    static void handleScrollUp(void *obj)
+    {
+        if (obj) static_cast<view_c*>(obj)->_scrollUp();
+    }
+
+    /// @brief Handler for scrolling down
+    static void handleScrollDown(void *obj)
+    {
+        if (obj) static_cast<view_c*>(obj)->_scrollDown();
+    }
+
     /// @brief Handler for drawing standard buttons
     static void handleDrawButton(void *obj, void *button)
     {
@@ -550,6 +642,22 @@ private:
     {
         display::drawBmp(
             "/icons/" + button.imageFilePath(), button.minX(), button.minY(), button.width(), button.height(), true);
+    }
+
+    /// @brief Scroll up the macro select options
+    void _scrollUp()
+    {
+        m_scroll = -1;
+        macroSelect();
+        m_scroll = 0;
+    }
+
+    /// @brief Scroll down the macro select options
+    void _scrollDown()
+    {
+        m_scroll = 1;
+        macroSelect();
+        m_scroll = 0;
     }
     //////////////////// ~BUTTON CALLBACK HANDLERS /////////////////////
 
@@ -589,10 +697,8 @@ private:
 
             if (_isPointInsideButton(tp, m_active_macros[i]))
             {
-                if (m_active_macros[i]->press())
-                {
-                    return true;
-                }
+                m_active_macros[i]->press();
+                return true;
             }
         }
 
@@ -641,7 +747,7 @@ private:
                 bool button_state = m_macro_select_options[i]->active();
                 m_macro_select_options[i]->active(!button_state); // toggle the active state
                 
-                if (!button_state) m_current_selected_id = UINT_MAX; // reset the selected id
+                if (!button_state) m_current_selected_id = USHRT_MAX; // reset the selected id
                 if (button_state) m_current_selected_id = m_macro_select_options[i]->id(); // else get the selected id
                 
                 m_macro_select_options[i]->draw();
@@ -653,6 +759,9 @@ private:
                 m_macro_select_options[i]->draw();
             }
         }
+        _createMacroSelectMenuButton();
+        size_t idx[1] = {macro_select_done_place};
+        _drawButton(m_menu_buttons, idx, 1);
         return ret;
     }
 
@@ -703,6 +812,7 @@ private:
     /// @brief Query the presenter for all available macros
     /// @return ids: The ids of the available macros
     /// @return names: The names of the available macros
+    /// @return size: The number of available macros
     size_t _queryAllMacros(uint16_t *ids, String *names)
     {
         size_t size = m_presenter->handleQueryMacros(ids, names);

@@ -71,6 +71,16 @@ public:
     {
         return m_model->getMacroOptions(qty, ids, names, start);
     }
+
+    void handleMinMaxID(uint16_t *min_id, uint16_t *max_id)
+    {
+        m_model->getMinMaxID(min_id, max_id);
+    }
+
+    int16_t handleGetMacroCount()
+    { 
+        return m_model->availableMacros();
+    }
 };
 
 } // namespace presenter

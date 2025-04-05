@@ -32,6 +32,22 @@ public:
     {
         m_macro_count = _availableMacros();
         _initialiseTables();
+
+        m_min_id = INT_MAX;
+        m_max_id = INT_MIN;
+
+        SimpleVector<int> ids = m_macro_names.keys();
+        for (const int& id : ids)
+        {
+            if (id < m_min_id)
+            {
+                m_min_id = id;
+            }
+            if (id > m_max_id)
+            {
+                m_max_id = id;
+            }
+        }
     }
 
     ~model_c() = default;
@@ -66,10 +82,21 @@ public:
         return _getMacroOptions(qty, ids, names, start);
     }
 
+    /// @brief Get the minimum and maximum macros ids
+    /// @param min_id
+    /// @param max_id 
+    void getMinMaxID(uint16_t *min_id, uint16_t *max_id) const
+    {
+        *min_id = m_min_id;
+        *max_id = m_max_id;
+    }
+
 private:
     int m_macro_count; ///< The number of macros in the macro file
     Hashtable<int, String> m_macro_names; ///< The macro name table
     Hashtable<int, macro::macro_c> m_macro_codes; ///< The macro code table
+    uint16_t m_min_id;
+    uint16_t m_max_id;
 
     void _initialiseTables()
     {
@@ -210,15 +237,15 @@ private:
     size_t _getMacroOptions(size_t const qty, uint16_t *ids, String *names, uint16_t const start = 0)
     {
         size_t count = 0;
-
         uint16_t id = start;
 
         for (size_t i = 0; i < qty; i++)
         {
             while (!m_macro_names.exists(id))
             {
+                Serial.print(String(id) + ", ");
                 id++; // increment the id
-                if (id == UINT_MAX) return count; // we've checked every possible id
+                if (id > m_max_id) return count; // we've checked every possible id
             }
 
             ids[i] = id;
