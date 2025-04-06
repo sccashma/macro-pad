@@ -35,19 +35,15 @@
 namespace view
 {
 
-/// Store the current macro's
-/// TODO: Store this to eeprom/SD and load it on startup.
-uint16_t constexpr startup_macros[7] = {30, 8, 43, 47, 31, 32, 37};
-
 /// @brief Helper macro to get the number of macro button pointers in an array
 /// @param x gui::macro_button_c*: The array
 /// @return The number of macro buttons in the array
-#define MACRO_BTN_COUNT(x) sizeof(m_active_macros) / sizeof(gui::macro_button_c*)
+#define MACRO_BTN_COUNT(x) sizeof(x) / sizeof(gui::macro_button_c*)
 
 /// @brief Helper macro to get the number of menu button pointers in an array
 /// @param x gui::button_base_c*: The array
 /// @return The number of menu buttons in the array
-#define BTN_COUNT(x) sizeof(m_menu_buttons) / sizeof(gui::button_base_c*)
+#define BTN_COUNT(x) sizeof(x) / sizeof(gui::button_base_c*)
 
 typedef enum view_state_t
 {
@@ -68,10 +64,9 @@ class view_c : public view_abstract_c
 private:
     view_state_t m_state;
     view_state_t m_prev_state;
-    gui::button_base_c m_test_button; //< test button (for testing only)
-
     uint16_t m_current_selected_id;
     uint8_t m_current_selected_placement;
+    bool m_update_macros;
     int m_scroll;
     
     /// @brief Buttons and their indexes
@@ -83,7 +78,12 @@ private:
     static size_t constexpr macro_select_done_place = 5;
     gui::button_base_c *m_menu_buttons[6];
     gui::button_base_c *m_macro_select_options[MACRO_SELECT_OPTIONS];
+    gui::button_base_c *m_macro_placement_options[MACRO_PLACE_OPTIONS];
     gui::macro_button_c *m_active_macros[MACRO_PLACE_OPTIONS];
+
+    /// Store the current macro's
+    /// TODO: Store this to eeprom/SD and load it on startup.
+    uint16_t m_active_macros_list[MACRO_PLACE_OPTIONS] = {30, 8, 43, 47, 31, 32, 37};
 
 public:
     /// @brief Constructor
@@ -99,7 +99,6 @@ public:
     /// @brief Display a message on the screen
     /// @param message The message to display
     void displayMessage(char const *message);
-
 
     /// @brief Run the view
     /// @details This is the main loop to monitor for input
@@ -121,6 +120,10 @@ public:
     /// @brief Display the macro select screen
     /// @details This screen allows the user to select a macro to place on the home screen
     void macroSelect();
+
+    /// @brief Display the macro place screen
+    /// @details This screen allows the user to place the selected macro on the home screen
+    void macroPlace();
     //////////////////// ~Main Window Rendering /////////////////////
 
     ///////////////////// Managing button creations /////////////////////
@@ -179,6 +182,9 @@ private:
     /// @brief Create a macro select menu button
     void _createMacroSelectMenuButton();
 
+    /// @brief Create a macro placement menu button
+    void _createMacroPlacementMenuButton();
+
     /// @brief Delete the active macros
     /// @details This is used to delete all active macros when they are no longer needed
     void _deleteActiveMacros();
@@ -190,6 +196,10 @@ private:
     /// @brief Delete the macro select options
     /// @details This is used to delete all macro select options when they are no longer needed
     void _deleteMacroSelectOptions();
+
+    /// @brief Delete the macro placement options
+    /// @details This is used to delete all macro placement options when they are no longer needed
+    void _deleteMacroPlacementOptions();
     //////////////////// ~Managing button creations /////////////////////
 
     ///////////////////// BUTTON CALLBACK HANDLERS /////////////////////
@@ -212,6 +222,12 @@ public:
         if (obj) static_cast<view_c*>(obj)->macroSelect();
     }
 
+    /// @brief Handler for the macro placement button
+    static void handleMacroPlace(void *obj)
+    {
+        if (obj) static_cast<view_c*>(obj)->macroPlace();
+    }
+
     /// @brief Handler for scrolling up
     static void handleScrollUp(void *obj)
     {
@@ -222,6 +238,16 @@ public:
     static void handleScrollDown(void *obj)
     {
         if (obj) static_cast<view_c*>(obj)->_scrollDown();
+    }
+
+    /// @brief Handler for updating the active macros
+    static void handleUpdateActiveMacros(void *obj)
+    {
+        if (obj)
+        {
+            static_cast<view_c*>(obj)->_updateActiveMacros();
+            static_cast<view_c*>(obj)->macroSelect();
+        }
     }
 
     /// @brief Handler for drawing standard buttons
@@ -250,9 +276,11 @@ private:
     /// @brief Scroll up the macro select options
     void _scrollUp();
 
-
     /// @brief Scroll down the macro select options
     void _scrollDown();
+
+    /// @brief Update the active macros
+    void _updateActiveMacros();
     //////////////////// ~BUTTON CALLBACK HANDLERS /////////////////////
 
     ///////////////////// TOUCH HANDLERS /////////////////////
@@ -278,6 +306,11 @@ private:
     /// @return True if a button was pressed, false otherwise
     bool _macroSelectTouchHandler(TSPoint const &tp);
 
+    /// @brief Handle touch input for the macro placement screen
+    /// @param tp The touch point
+    /// @return True if a button was pressed, false otherwise
+    bool _macroPlacementTouchHandler(TSPoint const &tp);
+
     /// @brief Check if a touch point is inside a button
     /// @param tp The touch point
     /// @param button The button to check
@@ -301,19 +334,6 @@ private:
     /// @return size: The number of available macros
     size_t _queryAllMacros(uint16_t *ids, String *names);
     //////////////////// ~PRESENTER CALLBACK HANDLERS /////////////////////
-
-    ////////////// TESTING FUNCTIONS /////////////////////
-public:
-    /// @brief Set the callback for a given button
-    /// @param callback 
-    /// @param ctx 
-    /// @note This is used for testing only
-    void setCallback(buttonCallback callback, void* ctx = nullptr);
-
-    /// @brief Render the test screen
-    /// @details This is used for testing only
-    void renderTestScreen();
-    ///////////////// ~TESTING FUNCTIONS /////////////////////
 };
 
 } // namespace view

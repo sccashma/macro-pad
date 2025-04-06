@@ -8,17 +8,15 @@
 
 namespace view
 {
+
 view_c::view_c()
 : m_state(view_state_t::NONE)
 , m_prev_state(view_state_t::NONE)
 , m_current_selected_id(USHRT_MAX)
 , m_current_selected_placement(UCHAR_MAX)
+, m_update_macros(false)
 , m_scroll(0)
 {
-    this->m_test_button = gui::button_base_c(
-        0, 0, DEFAULT_MENU_BUTTON_WIDTH, DEFAULT_MENU_BUTTON_HEIGHT, "# Macros");
-    this->m_test_button.drawCallback(handleDrawButton, this);
-
     for (size_t i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
     {
         m_active_macros[i] = nullptr;
@@ -33,6 +31,11 @@ view_c::view_c()
     {
         m_macro_select_options[i] = nullptr;
     }
+
+    for (size_t i = 0; i < BTN_COUNT(m_macro_placement_options); i++)
+    {
+        m_macro_placement_options[i] = nullptr;
+    }
 }
 
 view_c::~view_c()
@@ -40,6 +43,7 @@ view_c::~view_c()
     _deleteActiveMacros();
     _deleteMenuButtons();
     _deleteMacroSelectOptions();
+    _deleteMacroPlacementOptions();
 }
 
 void view_c::clearScreen()
@@ -56,16 +60,16 @@ void view_c::displayMessage(char const *message)
 void view_c::run()
 {
     loadScreen();
-
-    size_t num_startup_macros = MACRO_PLACE_OPTIONS;
-    String macro_names[num_startup_macros];
-    String macro_file_paths[num_startup_macros];
-    macro::macro_c macros[num_startup_macros];
+    
+    size_t constexpr num_active_macros_list = MACRO_PLACE_OPTIONS;
+    String macro_names[num_active_macros_list];
+    String macro_file_paths[num_active_macros_list];
+    macro::macro_c macros[num_active_macros_list];
 
     size_t count = m_presenter->handleLoadMacros(
-        startup_macros, num_startup_macros, macro_names, macro_file_paths, macros);
-    
+        m_active_macros_list, num_active_macros_list, macro_names, macro_file_paths, macros);
     createHomeScreenMacroButtons(count, macros, macro_names, macro_file_paths);
+
     homeScreen();
 
     for (;;)
@@ -125,6 +129,22 @@ void view_c::homeScreen()
     }
     
     _deleteMenuButtons();
+
+    //////////////////////////
+    if (m_update_macros)
+    {
+        _deleteActiveMacros();
+        size_t constexpr num_active_macros_list = MACRO_PLACE_OPTIONS;
+        String macro_names[num_active_macros_list];
+        String macro_file_paths[num_active_macros_list];
+        macro::macro_c macros[num_active_macros_list];
+    
+        size_t count = m_presenter->handleLoadMacros(
+            m_active_macros_list, num_active_macros_list, macro_names, macro_file_paths, macros);
+
+        createHomeScreenMacroButtons(count, macros, macro_names, macro_file_paths);
+        m_update_macros = false;
+    }
 
     for (int i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
     {
@@ -193,6 +213,9 @@ void view_c::macroSelect()
     {
         display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft_c::instance().width(), display::tft_c::instance().height());
     }
+
+    if (m_prev_state == view_state_t::MACRO_PLACE) _deleteMacroPlacementOptions();
+
     _deleteMenuButtons();
     _deleteMacroSelectOptions();
     gui::wf_macro_select_t wf;
@@ -295,6 +318,53 @@ void view_c::macroSelect()
     m_prev_state = m_state;
 }
 
+void view_c::macroPlace()
+{
+    m_state = view_state_t::MACRO_PLACE;
+    display::drawBmp("/bckgrnd.bmp", 0, 0, display::tft_c::instance().width(), display::tft_c::instance().height());
+
+    _deleteMenuButtons();
+    _deleteMacroSelectOptions();
+    gui::wf_home_screen_t wf;
+
+    // create the placement button options
+    for (int i = 0; i < BTN_COUNT(m_macro_placement_options); i++)
+    {
+        _generateButton(wf.macro_buttons[i]
+            , m_macro_placement_options
+            , String(i).c_str() // indicate the index
+            , nullptr
+            , nullptr
+            , handleDrawButton
+            , this
+            , i);
+        m_macro_placement_options[i]->fillColour(INDIGO_DYE);
+        m_macro_placement_options[i]->textColour(ANTI_FLASH_WHITE);
+        m_macro_placement_options[i]->borderColour(ANTI_FLASH_WHITE);
+        m_macro_placement_options[i]->setPressedColours(UCLA_BLUE, ANTI_FLASH_WHITE, ANTI_FLASH_WHITE);
+        m_macro_placement_options[i]->setDisabledColours(UCLA_BLUE, ANTI_FLASH_WHITE, ANTI_FLASH_WHITE);
+        m_macro_placement_options[i]->id(i);
+    }
+
+    _generateButton(wf.menu_button
+        , m_menu_buttons
+        , "OK"
+        , nullptr
+        , nullptr
+        , handleDrawButton
+        , this
+        , macro_select_done_place);
+
+    if (m_current_selected_placement == UCHAR_MAX) // If no placement is selected
+    {
+        m_menu_buttons[macro_select_done_place]->active(false);
+    }
+    
+    _drawButton(m_macro_placement_options, MACRO_PLACE_OPTIONS);
+    m_menu_buttons[macro_select_done_place]->draw();
+    m_prev_state = m_state;
+}
+
 void view_c::_drawButton(gui::button_base_c **button_array, size_t const count)
 {
     for (size_t i = 0; i < count; i++)
@@ -361,7 +431,11 @@ void view_c::createHomeScreenMacroButtons(
     }
 }
 
-void view_c::_createHomeScreenMacroButton(macro::macro_c const *macro, String const *name, String const *file_path)
+void view_c::_createHomeScreenMacroButton(
+    macro::macro_c const *macro, 
+    String const *name, 
+    String const *file_path
+)
 {
     gui::wf_home_screen_t wf;
 
@@ -398,12 +472,28 @@ void view_c::_createMacroSelectMenuButton()
         _generateButton(wf.confirm_button
             , m_menu_buttons
             , "Place"
-            , nullptr
-            , nullptr
+            , handleMacroPlace
+            , this
             , handleDrawButton
             , this
             , macro_select_done_place);
     }
+}
+
+void view_c::_createMacroPlacementMenuButton()
+{
+    gui::wf_home_screen_t wf;
+    _generateButton(wf.menu_button
+        , m_menu_buttons
+        , "OK"
+        , handleUpdateActiveMacros
+        , this
+        , handleDrawButton
+        , this
+        , macro_select_done_place);
+
+    bool active = (m_current_selected_placement == UCHAR_MAX) ? false : true;
+    m_menu_buttons[macro_select_done_place]->active(active);
 }
 
 void view_c::_deleteActiveMacros()
@@ -442,6 +532,18 @@ void view_c::_deleteMacroSelectOptions()
     }
 }
 
+void view_c::_deleteMacroPlacementOptions()
+{
+    for (size_t i = 0; i <BTN_COUNT(m_macro_placement_options); i++)
+    {
+        if (m_macro_placement_options[i] != nullptr)
+        {
+            delete m_macro_placement_options[i];
+            m_macro_placement_options[i] = nullptr;
+        }
+    }
+}
+
 void view_c::_drawButton(gui::button_base_c const & button)
 {
     display::drawButton(button.minX()
@@ -474,6 +576,17 @@ void view_c::_scrollDown()
     m_scroll = 0;
 }
 
+void view_c::_updateActiveMacros()
+{
+    if (m_current_selected_id != USHRT_MAX && m_current_selected_placement != UCHAR_MAX)
+    {
+        m_active_macros_list[m_current_selected_placement] = m_current_selected_id;
+        m_current_selected_id = USHRT_MAX;
+        m_current_selected_placement = UCHAR_MAX;
+        m_update_macros = true;
+    }
+}
+
 void view_c::_handleTouch(TSPoint const &tp)
 {
     switch (m_state)
@@ -487,7 +600,9 @@ void view_c::_handleTouch(TSPoint const &tp)
     case view_state_t::MACRO_SELECT:
         _macroSelectTouchHandler(tp);
         break;
-    // Add cases for other wireframes as needed
+    case view_state_t::MACRO_PLACE:
+        _macroPlacementTouchHandler(tp);
+        break;
     default:
         break;
     }
@@ -563,22 +678,42 @@ bool view_c::_macroSelectTouchHandler(TSPoint const &tp)
     return ret;
 }
 
+bool view_c::_macroPlacementTouchHandler(TSPoint const &tp)
+{
+    if (_menuTouchHandler(tp)) return true; /// Handle the menu buttons first
+
+    bool ret = false;
+    for (size_t i = 0; i < BTN_COUNT(m_macro_placement_options); i++)
+    {
+        if (m_macro_placement_options[i] == nullptr) continue;
+
+        if (_isPointInsideButton(tp, m_macro_placement_options[i]))
+        {
+            // Use the disabled button colours to indicate the currently selected option
+            bool button_state = m_macro_placement_options[i]->active();
+            m_macro_placement_options[i]->active(!button_state); // toggle the active state
+            
+            if (!button_state) m_current_selected_placement = UCHAR_MAX; // reset the selected id
+            if (button_state) m_current_selected_placement = m_macro_placement_options[i]->id(); // else get the selected id
+            
+            m_macro_placement_options[i]->draw();
+            ret = true;
+        }
+        else if (!m_macro_placement_options[i]->active())
+        {
+            m_macro_placement_options[i]->active(true);
+            m_macro_placement_options[i]->draw();
+        }
+    }
+    _createMacroPlacementMenuButton();
+    m_menu_buttons[macro_select_done_place]->draw();
+    return ret;
+}
+
 bool view_c::_isPointInsideButton(TSPoint const &tp, gui::button_base_c const *button)
 {
     return (tp.x >= button->minX() && tp.x <= button->maxX() &&
             tp.y >= button->minY() && tp.y < button->maxY());
-}
-
-void view_c::setCallback(buttonCallback callback, void* ctx)
-{
-    this->m_test_button.callback(callback, ctx);
-}
-
-void view_c::renderTestScreen()
-{
-    display::tft_c::instance().fillScreen(INDIGO_DYE);
-    // m_test_button.draw();
-    m_active_macros[0]->draw();
 }
 
 void view_c::setPresenter(presenter::presenter_abstract_c *presenter)
