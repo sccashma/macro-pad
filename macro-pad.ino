@@ -66,7 +66,6 @@ void setup()
     display::tft_c::instance().println("UNKNOWN ERROR");
 }
 
-
 void loop()
 {
     // Program should never reach this point
