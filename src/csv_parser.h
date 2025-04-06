@@ -10,7 +10,7 @@ const char DELIMETER = ',';
 /// @param components The array to store the components in
 /// @param components_size The size of the array to store the components in
 /// @return size_t: The number of components parsed
-size_t parseCSVLine(String input, String components[], size_t const components_size)
+inline size_t parseCSVLine(String input, String components[], size_t const components_size)
 {
     size_t read_entries = 0;
     
@@ -60,7 +60,7 @@ size_t parseCSVLine(String input, String components[], size_t const components_s
 /// @brief Create a substring of the text between the two outer most quotes.
 /// @param entry The entry to parse
 /// @return String: The parsed entry
-String parseCodeEntry(String entry)
+inline String parseCodeEntry(String entry)
 {
     size_t opening = entry.indexOf('"');
     size_t closing = entry.lastIndexOf('"');

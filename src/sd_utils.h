@@ -10,7 +10,7 @@ namespace sd
     
 /// @brief Attempt to initialise the sd card
 /// \return bool: Did the SD card initialise correctly
-bool initialiseSD()
+inline bool initialiseSD()
 {
     bool good = SD.begin();
     return good;
@@ -20,7 +20,7 @@ bool initialiseSD()
 /// @param file The file handle to read from
 /// @param delim The delimiter to read until (default: ',')
 /// @return String: The line
-String readLineUntil(File *file, char delim = ',')
+inline String readLineUntil(File *file, char delim = ',')
 {
     char buffer[250] = {NULL};
     size_t idx = 0;
@@ -47,7 +47,7 @@ String readLineUntil(File *file, char delim = ',')
 /// @brief Read the next line from a given file on the SD card
 /// \param file The file handle to read from
 /// \return String: The line
-String readLine(File *file)
+inline String readLine(File *file)
 {
     return readLineUntil(file, '\n');
 }

@@ -5,6 +5,8 @@
     Description: This file contains the definition of the macro button class, which is used to create buttons for the macro pad.
 */
 
+#define DISABLE_MACRO_BUTTONS ///< Disable macro buttons for development purposes
+
 #ifndef _MACRO_BUTTON_H_
 #define _MACRO_BUTTON_H_
 

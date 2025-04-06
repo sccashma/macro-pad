@@ -243,7 +243,6 @@ private:
         {
             while (!m_macro_names.exists(id))
             {
-                Serial.print(String(id) + ", ");
                 id++; // increment the id
                 if (id > m_max_id) return count; // we've checked every possible id
             }

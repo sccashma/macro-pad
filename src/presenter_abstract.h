@@ -7,6 +7,9 @@
 #ifndef _PRESENTER_ABSTRACT_H_
 #define _PRESENTER_ABSTRACT_H_
 
+#include <Arduino.h>
+
+#include "macro.h"
 namespace presenter
 {
 

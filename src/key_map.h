@@ -8,12 +8,12 @@
 namespace km
 {
 
-Hashtable<String, uint8_t> key_table;
+static Hashtable<String, uint8_t> key_table;
 
 /// @brief Initialise the key table with the key mappings
 /// @details The key table is a hashtable that maps the string representation of the key to the key code
 ///          The key codes are defined in the Keyboard library: https://docs.arduino.cc/language-reference/en/functions/usb/Keyboard/keyboardModifiers/
-void initTable()
+inline void initTable()
 {
     uint8_t constexpr NUM0 = 0X30;
     uint8_t constexpr NUM1 = 0X31;
@@ -219,7 +219,7 @@ void initTable()
 /// @brief Get the key code for a given key
 /// @param key The key to get the code for
 /// @return uint8_t: The key code
-uint8_t getKeyCode(String const& key)
+inline uint8_t getKeyCode(String const& key)
 {
     uint8_t code = NULL;
 

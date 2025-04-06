@@ -52,23 +52,23 @@ int constexpr Y_o = 111, Y_n = 893;
 #ifdef TOUCH_CALIBRATION_PROCESS
 /// @brief Calibration process for the touch screen
 /// @param p The touch screen point to calibrate
-void calibrateTouchscreen(TSPoint& p)
+inline void calibrateTouchscreen(TSPoint& p)
 {
-    uint16_t const screen_width = display::tft->width() - 1;
-    uint16_t const screen_height = display::tft->height() - 1;
+    uint16_t const screen_width = display::tft_c::instance().width() - 1;
+    uint16_t const screen_height = display::tft_c::instance().height() - 1;
 
     uint16_t const text_y_offset = screen_height / 3;
 
-    display::tft->drawRect(0, 0, 2, 2, ANTI_FLASH_WHITE); // Draw a pixel at the top left corner of the screen
-    display::tft->drawRect(screen_width - 2, 0, 2, 2, ANTI_FLASH_WHITE); // Draw a pixel at the top right corner of the screen
-    display::tft->drawRect(0, screen_height - 2, 2, 2, ANTI_FLASH_WHITE); // Draw a pixel at the bottom left corner of the screen
-    display::tft->drawRect(screen_width - 2, screen_height - 2, 2, 2, ANTI_FLASH_WHITE); // Draw a pixel at the bottom right corner of the screen
-    display::tft->setTextColor(ANTI_FLASH_WHITE);
-    display::tft->setTextSize(3);
-    display::tft->setTextWrap(true);
-    display::tft->setCursor(0, text_y_offset); // Center the text vertically
-    display::tft->println("Calibration mode");
-    display::tft->println("Touch corners and read values from serial monitor");
+    display::tft_c::instance().drawRect(0, 0, 2, 2, ANTI_FLASH_WHITE); // Draw a pixel at the top left corner of the screen
+    display::tft_c::instance().drawRect(screen_width - 2, 0, 2, 2, ANTI_FLASH_WHITE); // Draw a pixel at the top right corner of the screen
+    display::tft_c::instance().drawRect(0, screen_height - 2, 2, 2, ANTI_FLASH_WHITE); // Draw a pixel at the bottom left corner of the screen
+    display::tft_c::instance().drawRect(screen_width - 2, screen_height - 2, 2, 2, ANTI_FLASH_WHITE); // Draw a pixel at the bottom right corner of the screen
+    display::tft_c::instance().setTextColor(ANTI_FLASH_WHITE);
+    display::tft_c::instance().setTextSize(3);
+    display::tft_c::instance().setTextWrap(true);
+    display::tft_c::instance().setCursor(0, text_y_offset); // Center the text vertically
+    display::tft_c::instance().println("Calibration mode");
+    display::tft_c::instance().println("Touch corners and read values from serial monitor");
 
     // Print the raw values to the serial monitor for calibration
     Serial.print("X: ");
@@ -80,15 +80,15 @@ void calibrateTouchscreen(TSPoint& p)
 
 /// @brief Map the raw touch screen values to the screen coordinates
 /// @param p The touch screen point to map
-void mapPoint(TSPoint *p)
+inline void mapPoint(TSPoint *p)
 {   
 #ifdef DEBUG_TOUCH
     uint16_t raw_x = p->x;
     uint16_t raw_y = p->y;
 #endif
 
-    uint16_t const screen_width = display::tft->width() - 1;
-    uint16_t const screen_height = display::tft->height() - 1;
+    uint16_t const screen_width = display::tft_c::instance().width() - 1;
+    uint16_t const screen_height = display::tft_c::instance().height() - 1;
     int16_t tmp_x = p->x;
     p->x = constrain(map(p->y, Y_n, Y_o, 0, screen_width), 0, screen_width);
     p->y = constrain(map(tmp_x, X_n, X_o, 0, screen_height), 0, screen_height);
@@ -97,23 +97,23 @@ void mapPoint(TSPoint *p)
     uint16_t const text_y_offset1 = (screen_height / 2) - (textPixelHeight(3) + 2);
     uint16_t const text_y_offset2 = (screen_height / 2) + 2;
 
-    display::tft->fillScreen(RICH_BLACK); // Clear the screen
-    display::tft->setTextColor(ANTI_FLASH_WHITE);
-    display::tft->setTextSize(3);
-    display::tft->setTextWrap(true);
+    display::tft_c::instance().fillScreen(RICH_BLACK); // Clear the screen
+    display::tft_c::instance().setTextColor(ANTI_FLASH_WHITE);
+    display::tft_c::instance().setTextSize(3);
+    display::tft_c::instance().setTextWrap(true);
 
-    display::tft->setCursor(10, text_y_offset1);
-    display::tft->print("X: ");
-    display::tft->print(raw_x);
-    display::tft->print(" -> ");
-    display::tft->print(p->x);
+    display::tft_c::instance().setCursor(10, text_y_offset1);
+    display::tft_c::instance().print("X: ");
+    display::tft_c::instance().print(raw_x);
+    display::tft_c::instance().print(" -> ");
+    display::tft_c::instance().print(p->x);
     
-    display::tft->setCursor(10, text_y_offset2);
-    display::tft->print("Y: ");
-    display::tft->print(raw_y);
-    display::tft->print(" -> ");
-    display::tft->print(p->y);
+    display::tft_c::instance().setCursor(10, text_y_offset2);
+    display::tft_c::instance().print("Y: ");
+    display::tft_c::instance().print(raw_y);
+    display::tft_c::instance().print(" -> ");
+    display::tft_c::instance().print(p->y);
 #endif
 }
 
-#endif // __TOUCHSCREEN_CALIBRATION_H_
+#endif // __TOUCHSCREEN_CALIBRATION_H__

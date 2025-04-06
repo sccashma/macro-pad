@@ -17,7 +17,26 @@
 namespace macro
 {
 
-size_t parseKeyCodes(String const &, uint8_t *, size_t const );
+/// @brief Generate a macro from a given key sequence
+/// @param keys The key sequence to generate a macro from
+/// @param codes The array to store the key codes in
+/// @param codes_size The size of the array to store the key codes in
+/// @return size_t: The number of key codes generated
+inline size_t parseKeyCodes(String const &keys, uint8_t *codes, size_t const codes_size)
+{
+    String components[codes_size];
+
+    csv::parseCSVLine(keys, components, codes_size);
+
+    size_t idx = 0;
+    while (components[idx].length() != 0)
+    {
+        codes[idx] = km::getKeyCode(components[idx]);
+        idx++;
+    }
+
+    return idx;
+}
 
 /// @brief Data structure defining a macro
 /// @note The macro is defined as a sequence of keys. The key codes are defined in the key_map.h file.
@@ -72,45 +91,22 @@ public:
         }
     }
 
-    // uint8_t id;                                 ///< The id of the macro
-    // String name;                                ///< The name of the macro
 private:
     size_t const codes_size = KEY_CODES_MAX;    ///< The size of the key codes array
     uint8_t codes[KEY_CODES_MAX];               ///< The key codes for the macro
 };
 
 /// @brief initialise the keyboard
-void initialiseKeyboard()
+inline void initialiseKeyboard()
 {
     Keyboard.begin();
     km::initTable();
 }
 
 /// @brief close the keyboard
-void closeKeyboard()
+inline void closeKeyboard()
 {
     Keyboard.end();
-}
-
-/// @brief Generate a macro from a given key sequence
-/// @param keys The key sequence to generate a macro from
-/// @param codes The array to store the key codes in
-/// @param codes_size The size of the array to store the key codes in
-/// @return size_t: The number of key codes generated
-size_t parseKeyCodes(String const &keys, uint8_t *codes, size_t const codes_size)
-{
-    String components[codes_size];
-
-    csv::parseCSVLine(keys, components, codes_size);
-
-    size_t idx = 0;
-    while (components[idx].length() != 0)
-    {
-        codes[idx] = km::getKeyCode(components[idx]);
-        idx++;
-    }
-
-    return idx;
 }
 
 

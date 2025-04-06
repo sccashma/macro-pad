@@ -23,7 +23,6 @@ public:
     virtual void setPresenter(presenter::presenter_abstract_c *) = 0;
     virtual void renderTestScreen() = 0;
     virtual void setCallback(buttonCallback, void*) = 0;
-
 };
 
 } // namespace view

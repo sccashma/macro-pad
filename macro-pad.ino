@@ -1,6 +1,5 @@
 
 // #define DEBUG
-#define DISABLE_MACRO_BUTTONS ///< Disable macro buttons for development purposes
 
 #include "src/ILI9341_driver.h"
 #include "src/tft_touch.h"
@@ -32,10 +31,10 @@ void setup()
     macro::initialiseKeyboard();
 
 #ifdef TOUCH_CALIBRATION_PROCESS
-    display::tft->setTextColor(ANTI_FLASH_WHITE);
-    display::tft->setTextSize(3);
-    display::tft->setTextWrap(true);
-    display::tft->println("Touch screen to begin calibration process.");
+    display::tft_c::instance().setTextColor(ANTI_FLASH_WHITE);
+    display::tft_c::instance().setTextSize(3);
+    display::tft_c::instance().setTextWrap(true);
+    display::tft_c::instance().println("Touch screen to begin calibration process.");
     delay(2000);
 #endif
 
@@ -59,12 +58,12 @@ void setup()
 
     // If the pragram reaches this point, then somehting went wrong and we should disconnect
     macro::closeKeyboard();
-    display::tft->setTextColor(ANTI_FLASH_WHITE);
-    display::tft->fillScreen(RICH_BLACK);
-    display::tft->setCursor(0, 0);
-    display::tft->setTextSize(1);
-    display::tft->setTextWrap(true);
-    display::tft->println("UNKNOWN ERROR");
+    display::tft_c::instance().setTextColor(ANTI_FLASH_WHITE);
+    display::tft_c::instance().fillScreen(RICH_BLACK);
+    display::tft_c::instance().setCursor(0, 0);
+    display::tft_c::instance().setTextSize(1);
+    display::tft_c::instance().setTextWrap(true);
+    display::tft_c::instance().println("UNKNOWN ERROR");
 }
 
 
