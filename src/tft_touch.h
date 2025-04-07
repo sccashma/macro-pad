@@ -13,7 +13,7 @@
 #define YM 9
 
 /// @brief Touch screen calibration values
-int constexpr MINPRESSURE = 200;
+int constexpr MINPRESSURE = 250;
 int constexpr MAXPRESSURE = 1000;
 
 /// @brief Debounce parameters
