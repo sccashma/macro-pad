@@ -163,16 +163,16 @@ private:
     );
 
 public:
-    /// @brief Create a set of macro buttons for the home screen
+    /// @brief Create a set of macro buttons for the home screen based on the m_active_macros_list.
     /// @param num_macros The number of macros being passed to the function
     /// @param macros The macros to create buttons for
     /// @param names The names of the macros
     /// @param file_paths The file paths of the images to display on the buttons
-    /// @note This function will create buttons for the macros in the first available slots
+    /// @note This function will create buttons for the macros in their respective slots
     void createHomeScreenMacroButtons(macro::macro_c const *macros, String const *names, String const *file_paths);
 
 private:
-    /// @brief Create a macro button in the first available slot
+    /// @brief Create a macro button in the selected slot
     /// @param macro The macro to send on button press
     /// @param name The names of the macro
     /// @param file_path The file path of the macro's bmp
