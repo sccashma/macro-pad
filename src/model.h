@@ -93,8 +93,7 @@ public:
 
 private:
     int m_macro_count; ///< The number of macros in the macro file
-    Hashtable<int, String> m_macro_names; ///< The macro name table
-    Hashtable<int, macro::macro_c> m_macro_codes; ///< The macro code table
+    Hashtable<int, String> m_macro_names; ///< The macro name table for speed
     uint16_t m_min_id;
     uint16_t m_max_id;
 
@@ -103,30 +102,23 @@ private:
         uint16_t ids[m_macro_count];
         String names[m_macro_count];
         macro::macro_c codes[m_macro_count]; 
-        String ignore[m_macro_count]; // ignore the file paths
-        int query_count = _queryMacros(ids, names);
-        int read_count = _readMacros(ids, m_macro_count, names, ignore, codes);
-        
+        {
+            String ignore[m_macro_count]; // ignore the file paths
+            int query_count = _queryMacros(ids, names);
+            int read_count = _readMacros(ids, m_macro_count, names, ignore, codes);
+        }
+
         if (!m_macro_names.isEmpty())
         {
             m_macro_names.clear();
-        }
-    
-        if (!m_macro_codes.isEmpty())
-        {
-            m_macro_codes.clear();
         }
 
         for (size_t i = 0; i < m_macro_count; i++)
         {
             m_macro_names.put(ids[i], names[i]);
         }
-
-        for (size_t i = 0; i < m_macro_count; i++)
-        {
-            m_macro_codes.put(ids[i], codes[i]);
-        }
-    }   
+    }
+  
 
     /// @brief Count the number of macros in the macro file
     /// @return int16_t: The number of macros
