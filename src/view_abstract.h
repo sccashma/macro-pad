@@ -19,7 +19,6 @@ class view_abstract_c
 {
 public:
     virtual void run() = 0;
-    virtual void createHomeScreenMacroButtons(size_t const, macro::macro_c const *, String const *, String const *) = 0;
     virtual void setPresenter(presenter::presenter_abstract_c *) = 0;
 };
 

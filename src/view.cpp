@@ -44,7 +44,6 @@ view_c::view_c()
         EEPROM.get(i, val);
         m_active_macros_list[i] = (val & 0x00FF); // lower 8 bits
     }
-    Serial.println();
 }
 
 view_c::~view_c()
@@ -77,7 +76,7 @@ void view_c::run()
 
     size_t count = m_presenter->handleLoadMacros(
         m_active_macros_list, num_active_macros_list, macro_names, macro_file_paths, macros);
-    createHomeScreenMacroButtons(count, macros, macro_names, macro_file_paths);
+    createHomeScreenMacroButtons(macros, macro_names, macro_file_paths);
 
     homeScreen();
 
@@ -151,7 +150,7 @@ void view_c::homeScreen()
         size_t count = m_presenter->handleLoadMacros(
             m_active_macros_list, num_active_macros_list, macro_names, macro_file_paths, macros);
 
-        createHomeScreenMacroButtons(count, macros, macro_names, macro_file_paths);
+        createHomeScreenMacroButtons(macros, macro_names, macro_file_paths);
         m_update_macros = false;
     }
 
@@ -431,35 +430,31 @@ void view_c::_generateButton(
     }
 }
 
-void view_c::createHomeScreenMacroButtons(
-    size_t const num_macros, macro::macro_c const *macros, String const *names, String const *file_paths)
+void view_c::createHomeScreenMacroButtons(macro::macro_c const *macros, String const *names, String const *file_paths)
 {
-    for (size_t i = 0; i < num_macros; i++)
+    for (size_t i = 0; i < MACRO_PLACE_OPTIONS; i++)
     {
-        _createHomeScreenMacroButton(&macros[i], &names[i], &file_paths[i]);
+        if(m_active_macros_list[i] == USHRT_MAX) continue; // any non USHRT_MAX is a valid id
+        _createHomeScreenMacroButton(&macros[i], &names[i], &file_paths[i], i);
     }
 }
 
 void view_c::_createHomeScreenMacroButton(
     macro::macro_c const *macro, 
     String const *name, 
-    String const *file_path
+    String const *file_path,
+    size_t const idx
 )
 {
     gui::wf_home_screen_t wf;
+    if (m_active_macros[idx] != nullptr) delete m_active_macros[idx];
 
-    // Find the first available slot
-    for (size_t i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
-    {
-        if (m_active_macros[i] != nullptr) continue;
-
-        m_active_macros[i] = new gui::macro_button_c(*macro, *name, *file_path);
-        m_active_macros[i]->setPos(wf.macro_buttons[i].x, wf.macro_buttons[i].y);
-        m_active_macros[i]->width(wf.macro_buttons[i].width);
-        m_active_macros[i]->height(wf.macro_buttons[i].height);
-        m_active_macros[i]->drawCallback(handleDrawBmpButton, this);
-        break;
-    }
+    m_active_macros[idx] = new gui::macro_button_c(*macro, *name, *file_path);
+    m_active_macros[idx]->setPos(wf.macro_buttons[idx].x, wf.macro_buttons[idx].y);
+    m_active_macros[idx]->width(wf.macro_buttons[idx].width);
+    m_active_macros[idx]->height(wf.macro_buttons[idx].height);
+    m_active_macros[idx]->drawCallback(handleDrawBmpButton, this);
+    m_active_macros[idx]->id(m_active_macros_list[idx]); // assume this for debugging
 }
 
 void view_c::_createMacroSelectMenuButton()
@@ -745,4 +740,20 @@ size_t view_c::_queryAllMacros(uint16_t *ids, String *names)
     return size;
 }
 
+#if defined(DEBUG)
+void view_c::printState()
+{
+    Serial.println("Debug: ");
+    Serial.print("SRAM:");
+    for (int i = 0; i < MACRO_PLACE_OPTIONS; i++)
+        Serial.print(" " + String(m_active_macros_list[i]));
+    Serial.println("\nEEPROM:");
+    for (int i = 0; i < MACRO_PLACE_OPTIONS; i++)
+        Serial.print(" " + String(EEPROM.read(i)));
+    Serial.println("\nActive Macros:");
+    for (size_t i = 0; i < MACRO_BTN_COUNT(m_active_macros); i++)
+        Serial.print(" " + (m_active_macros[i] != nullptr) ? String(m_active_macros[i]->id()) : "NULL");
+    Serial.println("\n----------------------------------------------------");
+}
+#endif
 } // namespace view
