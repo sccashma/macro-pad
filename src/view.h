@@ -20,6 +20,7 @@
 #define _VIEW_H_
 
 #include <Arduino.h>
+#include <EEPROM.h>
 #include "limits.h"
 
 #include "presenter_abstract.h"
@@ -82,8 +83,7 @@ private:
     gui::macro_button_c *m_active_macros[MACRO_PLACE_OPTIONS];
 
     /// Store the current macro's
-    /// TODO: Store this to eeprom/SD and load it on startup.
-    uint16_t m_active_macros_list[MACRO_PLACE_OPTIONS] = {30, 8, 43, 47, 31, 32, 37};
+    uint16_t m_active_macros_list[MACRO_PLACE_OPTIONS];
 
 public:
     /// @brief Constructor
@@ -200,6 +200,10 @@ private:
     /// @brief Delete the macro placement options
     /// @details This is used to delete all macro placement options when they are no longer needed
     void _deleteMacroPlacementOptions();
+
+    /// @brief Save the active macros
+    /// @details This is used to save the active macros list to persistent storage
+    void _saveActiveMacros();
     //////////////////// ~Managing button creations /////////////////////
 
     ///////////////////// BUTTON CALLBACK HANDLERS /////////////////////
@@ -245,6 +249,7 @@ public:
     {
         if (obj)
         {
+            static_cast<view_c*>(obj)->_saveActiveMacros();
             static_cast<view_c*>(obj)->_updateActiveMacros();
             static_cast<view_c*>(obj)->macroSelect();
         }

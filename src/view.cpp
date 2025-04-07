@@ -36,6 +36,15 @@ view_c::view_c()
     {
         m_macro_placement_options[i] = nullptr;
     }
+
+    /// Load the active macros list
+    for (size_t i = 0; i < MACRO_PLACE_OPTIONS; i++)
+    {
+        int val;
+        EEPROM.get(i, val);
+        m_active_macros_list[i] = (val & 0x00FF); // lower 8 bits
+    }
+    Serial.println();
 }
 
 view_c::~view_c()
@@ -541,6 +550,15 @@ void view_c::_deleteMacroPlacementOptions()
             delete m_macro_placement_options[i];
             m_macro_placement_options[i] = nullptr;
         }
+    }
+}
+
+void view_c::_saveActiveMacros()
+{
+    for (size_t i = 0; i < MACRO_PLACE_OPTIONS; i++)
+    {
+        int val = m_active_macros_list[i];
+        EEPROM.update(i, val);
     }
 }
 
