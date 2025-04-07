@@ -170,7 +170,7 @@ public:
 
     /// @brief Set the id of the button
     /// @param id The id of the button
-    void id(int16_t id) { this->m_id = id; }
+    void id(uint16_t id) { this->m_id = id; }
 
     /// @brief Get the id of the button
     /// @return int16_t: The id of the button

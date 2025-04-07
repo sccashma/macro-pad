@@ -169,15 +169,19 @@ public:
     /// @param names The names of the macros
     /// @param file_paths The file paths of the images to display on the buttons
     /// @note This function will create buttons for the macros in the first available slots
-    void createHomeScreenMacroButtons(
-        size_t const num_macros, macro::macro_c const *macros, String const *names, String const *file_paths);
+    void createHomeScreenMacroButtons(macro::macro_c const *macros, String const *names, String const *file_paths);
 
 private:
     /// @brief Create a macro button in the first available slot
     /// @param macro The macro to send on button press
     /// @param name The names of the macro
     /// @param file_path The file path of the macro's bmp
-    void _createHomeScreenMacroButton(macro::macro_c const *macro, String const *name, String const *file_path);
+    void _createHomeScreenMacroButton(
+        macro::macro_c const *macro, 
+        String const *name, 
+        String const *file_path, 
+        size_t const idx
+    );
 
     /// @brief Create a macro select menu button
     void _createMacroSelectMenuButton();
@@ -249,9 +253,9 @@ public:
     {
         if (obj)
         {
-            static_cast<view_c*>(obj)->_saveActiveMacros();
             static_cast<view_c*>(obj)->_updateActiveMacros();
             static_cast<view_c*>(obj)->macroSelect();
+            static_cast<view_c*>(obj)->_saveActiveMacros();
         }
     }
 
@@ -339,6 +343,11 @@ private:
     /// @return size: The number of available macros
     size_t _queryAllMacros(uint16_t *ids, String *names);
     //////////////////// ~PRESENTER CALLBACK HANDLERS /////////////////////
+
+    /// @brief Print the state of the view, used for debuggin macro placement/creation
+#if defined(DEBUG)
+    void printState();
+#endif
 };
 
 } // namespace view
