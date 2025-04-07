@@ -86,8 +86,11 @@ public:
         for (size_t i = 0; i < this->codes_size; i++)
         {
             if (this->codes[i] == 0) break; // Stop if we reach the end of the macro
-            Keyboard.write(this->codes[i]);
-            delay(KEYBOARD_ENTRY_DELAY_MS); // Delay between key presses
+            Keyboard.press(this->codes[i]);
+            int delay_ms = random(10, 25);
+            delay(delay_ms); // Delay between key presses
+            Keyboard.releaseAll();
+            delay(KEYBOARD_ENTRY_DELAY_MS);
         }
     }
 
